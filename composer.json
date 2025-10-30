@@ -1,0 +1,26 @@
+{
+  "name": "plotbox-io/standards",
+  "description": "PlotBox coding standards for PHP_CodeSniffer",
+  "type": "phpcodesniffer-standard",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "PlotBox\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.2",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "squizlabs/php_codesniffer": "^3.13",
+    "mediawiki/mediawiki-codesniffer": "^48.0",
+    "slevomat/coding-standard": "*",
+    "rarst/phpcs-cognitive-complexity": "*",
+    "escapestudios/symfony2-coding-standard": "*",
+    "phpcompatibility/php-compatibility": "*"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}

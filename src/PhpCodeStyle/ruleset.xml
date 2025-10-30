@@ -1,0 +1,453 @@
+<?xml version="1.0"?>
+<ruleset name="PlotBox">
+<!--    <config name="installed_paths" value="/app/dev-tools/codestyle/Standards,/app/vendor/squizlabs/php_codesniffer/src/Standards,/app/vendor/escapestudios/symfony2-coding-standard,/app/vendor/slevomat/coding-standard/SlevomatCodingStandard,/app/vendor/mediawiki/mediawiki-codesniffer,/app/vendor/phpcompatibility/php-compatibility,/app/vendor/rarst/phpcs-cognitive-complexity/src" />-->
+    <description>
+        The PlotBox (Base) Coding Standard. Most of the code style rules live here; However, some rules may
+        result in difficulties when having to refactor legacy code (e.g., enforcing camel case on all methods).
+        These rules are excluded from this set but are included in the extended ruleset. Combining these two
+        sets together will result in the complete code style for new code
+    </description>
+
+    <!-- Check PHP compatibility (version is set via CLI argument -runtime-set testVersion 5.5)
+    @see https://github.com/PHPCompatibility/PHPCompatibility#:~:text=you%20can%20run%20the%20checks%20for%20just%20one%20specific%20php%20version-->
+<!--    <rule ref="PHPCompatibility"/>-->
+
+    <!--
+    #################################################################
+    ######################    BASELINE    ###########################
+    #################################################################
+    -->
+    <rule ref="PSR1">
+        <!-- EXTENDED RULE - Ignore non camel caps rule in legacy -->
+        <exclude name="PSR1.Methods.CamelCapsMethodName.NotCamelCaps"/>
+        <!-- Workaround busted rule. See https://github.com/squizlabs/PHP_CodeSniffer/issues/3727 -->
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+    </rule>
+    <rule ref="PSR12"/>
+
+    <!-- Override PSR12 120 character soft line limit -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="200"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+
+    <!-- Fix for more recent version of this (PSR2.Files.EndFileNewline) missing some of these errors -->
+    <rule ref="Generic.Files.EndFileNewline"/>
+
+    <!-- EXTENDED RULE - Ignore bad default param ordering in legacy -->
+    <rule ref="PEAR.Functions.ValidDefaultValue">
+        <exclude name="PEAR.Functions.ValidDefaultValue.NotAtEnd"/>
+    </rule>
+
+    <!--
+    #################################################################
+    ########################    RARST    ############################
+    #################################################################
+    -->
+
+    <rule ref="CognitiveComplexity.Complexity.MaximumComplexity">
+        <properties>
+            <property name="maxCognitiveComplexity" value="10"/>
+        </properties>
+    </rule>
+
+    <!--
+    #################################################################
+    ######################    MEDIAWIKI    ##########################
+    #################################################################
+    -->
+
+    <rule ref="MediaWiki.WhiteSpace.MultipleEmptyLines"/>
+    <rule ref="MediaWiki.WhiteSpace.WhiteSpaceBeforeFunction"/>
+    <rule ref="MediaWiki.Usage.IsNull"/>
+    <rule ref="MediaWiki.Usage.NestedInlineTernary"/>
+
+     <!--
+    #################################################################
+    #######################    CUSTOM    ############################
+    #################################################################
+    -->
+    <rule ref="PlotBox.WhiteSpace.DisallowContiguousNewlines"/>
+    <rule ref="PlotBox.WhiteSpace.SuperfluousNewlines"/>
+    <rule ref="PlotBox.Commenting.UselessDescription"/>
+    <rule ref="PlotBox.Commenting.DisallowSingleTypedArray"/>
+    <rule ref="PlotBox.Commenting.PhpDocInsideFunctionParams"/>
+    <rule ref="PlotBox.TypeHints.ReturnVoid"/>
+
+    <!-- Modified Squiz version to disallow trailing comma (instead of enforce it) -->
+    <rule ref="PlotBox.Arrays.ArrayDeclaration"/>
+
+    <!--
+    #################################################################
+    #######################    GENERIC    ###########################
+    #################################################################
+    -->
+    <rule ref="Generic.Metrics.NestingLevel">
+        <properties>
+            <property name="nestingLevel" value="5"/>
+            <property name="absoluteNestingLevel" value="5"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+    <rule ref="Generic.Classes.DuplicateClassName"/>
+    <rule ref="Generic.CodeAnalysis">
+        <!-- This doesn't allow the common db pattern `while ($result = $res->fetch())` -->
+        <exclude name="Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition"/>
+        <!-- Allow unused function params (sometimes needed for interface implementations, anon callbacks, etc) -->
+        <exclude name="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+        <!-- Better version = Squiz.Commenting.EmptyCatchComment.Missing (allows single comment line) -->
+        <exclude name="Generic.CodeAnalysis.EmptyStatement.DetectedCatch"/>
+    </rule>
+    <rule ref="Squiz.Commenting.PostStatementComment"/>
+    <rule ref="Generic.Commenting.DocComment">
+        <!-- Too strict to require short description on every class property -->
+        <exclude name="Generic.Commenting.DocComment.MissingShort"/>
+        <!-- Can't easily enforce with Phpstorm code style rules so ignoring -->
+        <exclude name="Generic.Commenting.DocComment.TagValueIndent"/>
+        <!-- We prefer terse phpdoc (no spaces between doc comment types i.e., param, return..) -->
+        <exclude name="Generic.Commenting.DocComment.NonParamGroup"/>
+        <!-- We allow single line doc comments (e.g., /** @var Category $category */ ) -->
+        <exclude name="Generic.Commenting.DocComment.ContentAfterOpen"/>
+        <exclude name="Generic.Commenting.DocComment.ContentBeforeClose"/>
+        <!-- We allow single line doc comments (e.g., /** This is a description of something */ ) -->
+        <exclude name="Generic.Commenting.DocComment.SpacingBeforeShort"/>
+    </rule>
+    <rule ref="Generic.Commenting.Todo"/>
+    <rule ref="Generic.Files.OneClassPerFile"/>
+    <rule ref="Generic.Files.OneInterfacePerFile"/>
+    <rule ref="Generic.Files.OneObjectStructurePerFile"/>
+    <rule ref="Generic.Files.OneTraitPerFile"/>
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="150"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.Formatting.DisallowMultipleStatements"/>
+    <rule ref="Generic.Formatting.MultipleStatementAlignment">
+        <exclude name="Generic.Formatting.MultipleStatementAlignment.NotSameWarning"/>
+    </rule>
+    <rule ref="Generic.Formatting.SpaceAfterCast"/>
+    <rule ref="Generic.Formatting.SpaceAfterNot">
+        <properties>
+            <property name="spacing" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.NamingConventions">
+        <!-- We don't enforce these rules -->
+        <exclude name="Generic.NamingConventions.InterfaceNameSuffix.Missing"/>
+        <exclude name="Generic.NamingConventions.TraitNameSuffix.Missing"/>
+        <exclude name="Generic.NamingConventions.AbstractClassNamePrefix.Missing"/>
+        <!-- We allow snake_case in tests so can't really enforce this -->
+        <exclude name="Generic.NamingConventions.CamelCapsFunctionName"/>
+    </rule>
+    <rule ref="Generic.PHP.BacktickOperator"/>
+    <rule ref="Generic.PHP.CharacterBeforePHPOpeningTag"/>
+    <rule ref="Generic.PHP.DeprecatedFunctions"/>
+    <rule ref="Generic.PHP.ForbiddenFunctions">
+        <properties>
+            <property name="forbiddenFunctions" type="array">
+                <element key="legacy_count" value="count"/>
+                <element key="sizeof" value="count"/>
+                <element key="delete" value="unset"/>
+                <element key="print" value="echo"/>
+                <element key="is_null" value="null"/>
+                <element key="create_function" value="null"/>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="Generic.PHP.DisallowAlternativePHPTags"/>
+    <rule ref="Generic.PHP.SAPIUsage"/>
+    <rule ref="Generic.Strings.UnnecessaryStringConcat"/>
+    <rule ref="Generic.VersionControl.GitMergeConflict"/>
+    <rule ref="Generic.VersionControl.GitMergeConflict"/>
+    <rule ref="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
+    <rule ref="Generic.WhiteSpace.LanguageConstructSpacing"/>
+
+    <!--
+    #################################################################
+    ########################    SQUIZ    ############################
+    #################################################################
+    -->
+    <rule ref="Squiz.Arrays.ArrayBracketSpacing"/>
+    <rule ref="Squiz.PHP.LowercasePHPFunctions"/>
+    <rule ref="Squiz.Scope.MemberVarScope"/>
+    <rule ref="Squiz.Strings.DoubleQuoteUsage">
+        <!-- Ignore rule disallowing double quote string concatenation  -->
+        <exclude name="Squiz.Strings.DoubleQuoteUsage.ContainsVar"/>
+    </rule>
+    <rule ref="Squiz.Strings.EchoedStrings"/>
+    <rule ref="Squiz.Operators.ValidLogicalOperators"/>
+    <rule ref="Squiz.Classes.LowercaseClassKeywords"/>
+    <rule ref="Squiz.PHP.InnerFunctions"/>
+    <rule ref="Squiz.PHP.GlobalKeyword"/>
+    <rule ref="Squiz.PHP.Eval"/>
+    <rule ref="Squiz.PHP.CommentedOutCode"/>
+    <rule ref="Squiz.PHP.LowercasePHPFunctions"/>
+    <rule ref="Squiz.PHP.DisallowSizeFunctionsInLoops"/>
+    <rule ref="Squiz.WhiteSpace.SuperfluousWhitespace">
+        <properties>
+            <property name="ignoreBlankLines" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.ControlStructureSpacing"/>
+    <rule ref="Squiz.WhiteSpace.FunctionSpacing">
+        <properties>
+            <property name="spacing" value="1"/>
+            <property name="spacingBeforeFirst" value="0"/>
+            <property name="spacingAfterLast" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.WhiteSpace.ScopeIndent"/>
+    <rule ref="Squiz.WhiteSpace.OperatorSpacing">
+        <properties>
+            <!-- @see https://github.com/squizlabs/PHP_CodeSniffer/issues/348 -->
+            <property name="ignoreNewlines" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="Squiz.WhiteSpace.LogicalOperatorSpacing"/>
+    <rule ref="Generic.WhiteSpace.LanguageConstructSpacing"/>
+    <rule ref="Squiz.WhiteSpace.FunctionOpeningBraceSpace"/>
+    <rule ref="Squiz.WhiteSpace.SemicolonSpacing"/>
+    <!-- False positives when using partially defined parameter doc-blocks -->
+    <!-- <rule ref="Squiz.Commenting.FunctionComment.IncorrectTypeHint"/> -->
+    <rule ref="Squiz.Commenting.DocCommentAlignment">
+        <!-- Ignoring sniff as is not very good for complex annotations with indentation -->
+        <exclude name="Squiz.Commenting.DocCommentAlignment.SpaceAfterStar"/>
+    </rule>
+    <rule ref="Squiz.Commenting.ClassComment">
+        <!-- Class comments are not always necessary.. -->
+        <exclude name="Squiz.Commenting.ClassComment.Missing"/>
+
+        <!-- Is useful to sometimes use @method tag. This rule would disallow it.. -->
+        <exclude name="Squiz.Commenting.ClassComment.TagNotAllowed"/>
+    </rule>
+    <rule ref="Squiz.Commenting.ClassComment.Missing">
+        <!-- Allow omission of class comments in test classes -->
+        <exclude-pattern>*/*Test.php</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.EmptyCatchComment"/>
+    <rule ref="Squiz.Commenting.BlockComment">
+        <!-- This prevents the use of /** @var ... **/ annotations-->
+        <exclude name="Squiz.Commenting.BlockComment.WrongStart"/>
+        <!-- This enforces a blank line after -->
+        <exclude name="Squiz.Commenting.BlockComment.NoEmptyLineAfter"/>
+    </rule>
+    <rule ref="Squiz.NamingConventions.ValidVariableName">
+        <!-- We can't really enforce this because of the legacy models requiring PascalCase for property access.. -->
+        <exclude name="Squiz.NamingConventions.ValidVariableName.NotCamelCaps"/>
+        <exclude name="Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps"/>
+        <!-- We don't follow the underscore on private properties convention -->
+        <exclude name="Squiz.NamingConventions.ValidVariableName.PrivateNoUnderscore"/>
+    </rule>
+
+    <!--
+    #################################################################
+    ######################    SLEVOMAT    ###########################
+    #################################################################
+    -->
+
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+        <properties>
+            <property name="searchAnnotations" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Arrays.DisallowImplicitArrayCreation"/>
+    <rule ref="SlevomatCodingStandard.Classes.ModernClassNameReference"/>
+    <rule ref="SlevomatCodingStandard.Classes.EmptyLinesAroundClassBraces">
+        <properties>
+            <property name="linesCountAfterOpeningBrace" value="0"/>
+            <property name="linesCountBeforeClosingBrace" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Classes.TraitUseDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Classes.UselessLateStaticBinding"/>
+    <!-- Disabled. Sometimes can be useful to do this.. -->
+<!--    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration"/>-->
+    <rule ref="SlevomatCodingStandard.Commenting.ForbiddenAnnotations">
+        <properties>
+            <property name="forbiddenAnnotations" type="array">
+                <!-- We have version control systems for these -->
+                <element value="@author"/>
+                <element value="@created"/>
+                <element value="@version"/>
+                <element value="@category"/>
+                <!-- We have namespaces for this -->
+                <element value="@package"/>
+                <!-- It's not necessary to repeat licensing information in each file -->
+                <element value="@copyright"/>
+                <element value="@license"/>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Commenting.ForbiddenComments">
+        <properties>
+            <property name="forbiddenCommentPatterns" type="array">
+                <element value="/Constructor/"/>
+                <element value="/__construct/"/>
+                <element value="/Created by PhpStorm/"/>
+                <!-- No class comments with auto-generated name of class (this is useless info) -->
+                <element value="/^Class [a-z]{3,}$/i"/>
+                <!-- No comments with auto-generated author (eg. "User: Bob" or "Created by John on 03/02/16.") -->
+                <element value="|^User: [a-z ]{4,}$|i"/>
+                <element value="|^Created by [a-z]+ on \d{2}\/\d{2}\/\d{2,4}.$|i"/>
+                <!-- No comments with auto-generated dates/times (eg. "04/07/2018",
+                "Date: 04/07/2018", "Time: 12:05"). Note this only blocks comments
+                where these strings are the etirety of the comment line. They should
+                 not catch other comments where dates/times are used (even though using
+                 dates/times in comments is usually dubious..-->
+                <element value="|^\d{2}\/\d{2}\/\d{4}$|"/>
+                <element value="|^Date: \d{2}\/\d{2}\/\d{4}$|"/>
+                <element value="|^Time: \d{2}:\d{2}$|"/>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.ControlStructures.UselessIfConditionWithReturn"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.UselessTernaryOperator"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.AssignmentInCondition"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.DisallowContinueWithoutIntegerOperandInSwitch"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.DisallowYodaComparison"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.DisallowEmpty"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.LanguageConstructWithParentheses"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator">
+        <properties>
+            <property name="lineLengthLimit" value="85"/>
+            <property name="minExpressionsLength" value="35"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireShortTernaryOperator"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.UselessTernaryOperator"/>
+    <rule ref="SlevomatCodingStandard.Exceptions.DeadCatch"/>
+    <rule ref="SlevomatCodingStandard.Functions.StaticClosure"/>
+    <rule ref="SlevomatCodingStandard.Functions.UnusedInheritedVariablePassedToClosure"/>
+    <rule ref="SlevomatCodingStandard.Functions.UselessParameterDefaultValue"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.RequireOneNamespaceInFile"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.NamespaceSpacing"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.UseSpacing">
+    <properties>
+            <!-- brings into line with PSR12 -->
+            <property name="linesCountBetweenUseTypes" value="1"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Namespaces.DisallowGroupUse"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.MultipleUsesPerLine"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.UselessAlias"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.UseFromSameNamespace"/>
+    <rule ref="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly">
+        <properties>
+            <!-- Use statements for functions/constants not available until PHP6. We must allow for now.. -->
+            <property name="allowFullyQualifiedGlobalFunctions" value="true"/>
+            <property name="allowFullyQualifiedGlobalConstants" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Operators.RequireCombinedAssignmentOperator"/>
+    <rule ref="SlevomatCodingStandard.PHP.TypeCast"/>
+    <rule ref="SlevomatCodingStandard.PHP.UselessSemicolon"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHintSpacing"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.NullTypeHintOnLastPosition"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.LongTypeHints"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHintSpacing"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.UselessConstantTypeHint"/>
+    <rule ref="SlevomatCodingStandard.Variables.UselessVariable"/>
+    <rule ref="SlevomatCodingStandard.Variables.UnusedVariable"/>
+    <rule ref="SlevomatCodingStandard.PHP.UselessParentheses"/>
+    <rule ref="SlevomatCodingStandard.Operators.DisallowEqualOperators"/>
+    <!-- Newer PHP7/8 Rules -->
+    <rule ref="SlevomatCodingStandard.Classes.ClassConstantVisibility"/>
+    <rule ref="SlevomatCodingStandard.PHP.ShortList"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.NullableTypeForNullDefaultValue"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireNullCoalesceOperator"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHint"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.PropertyTypeHint"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint"/>
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <property name="spacesCountAroundEqualsSign" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.TypeHints.ClassConstantTypeHint">
+        <properties>
+            <property name="enableNativeTypeHint" value="true"/>
+            <property name="fixableNativeTypeHint" value="private"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.TypeHints.DNFTypeHintFormat">
+        <properties>
+            <property name="enable" value="true"/>
+            <property name="withSpacesAroundOperators" value="no"/>
+            <property name="withSpacesInsideParentheses" value="no"/>
+            <property name="shortNullable" value="yes"/>
+            <property name="nullPosition" value="last"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Exceptions.RequireNonCapturingCatch"/>
+
+    <rule ref="SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed"/>
+    <rule ref="SlevomatCodingStandard.Arrays.MultiLineArrayEndBracketPlacement"/>
+    <rule ref="SlevomatCodingStandard.Arrays.SingleLineArrayWhitespace"/>
+    <rule ref="SlevomatCodingStandard.Attributes.AttributeAndTargetSpacing">
+        <properties>
+            <property name="allowOnSameLine" value="true"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Attributes.DisallowAttributesJoining"/>
+    <rule ref="SlevomatCodingStandard.Attributes.DisallowMultipleAttributesPerLine"/>
+    <rule ref="SlevomatCodingStandard.Classes.BackedEnumTypeSpacing"/>
+    <rule ref="SlevomatCodingStandard.Classes.ClassMemberSpacing"/>
+    <rule ref="SlevomatCodingStandard.Classes.DisallowLateStaticBindingForConstants"/>
+    <rule ref="SlevomatCodingStandard.Classes.DisallowMultiConstantDefinition"/>
+    <rule ref="SlevomatCodingStandard.Classes.DisallowMultiPropertyDefinition"/>
+    <rule ref="SlevomatCodingStandard.Classes.DisallowStringExpressionPropertyFetch"/>
+    <rule ref="SlevomatCodingStandard.Classes.PropertyDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Classes.RequireConstructorPropertyPromotion"/>
+    <rule ref="SlevomatCodingStandard.Classes.RequireMultiLineMethodSignature">
+        <properties>
+            <property name="minParametersCount" value="3"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Classes.RequireSelfReference"/>
+    <rule ref="SlevomatCodingStandard.Commenting.AnnotationName"/>
+    <rule ref="SlevomatCodingStandard.Commenting.DeprecatedAnnotationDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Commenting.RequireOneLineDocComment"/>
+    <rule ref="SlevomatCodingStandard.Commenting.RequireOneLinePropertyDocComment"/>
+    <rule ref="SlevomatCodingStandard.Commenting.UselessFunctionDocComment"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.DisallowTrailingMultiLineTernaryOperator"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.NewWithParentheses"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireNullCoalesceEqualOperator"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireNullSafeObjectOperator"/>
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireSingleLineCondition"/>
+    <rule ref="SlevomatCodingStandard.Functions.ArrowFunctionDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Functions.DisallowEmptyFunction"/>
+    <rule ref="SlevomatCodingStandard.Functions.DisallowTrailingCommaInCall"/>
+    <rule ref="SlevomatCodingStandard.Functions.FunctionLength">
+        <properties>
+            <property name="maxLinesLength" value="100"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Functions.DisallowTrailingCommaInClosureUse"/>
+    <rule ref="SlevomatCodingStandard.Functions.DisallowTrailingCommaInDeclaration"/>
+    <rule ref="SlevomatCodingStandard.Functions.RequireMultiLineCall">
+        <properties>
+            <property name="minLineLength" value="120"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Numbers.RequireNumericLiteralSeparator">
+        <properties>
+            <property name="minDigitsBeforeDecimalPoint" value="5"/>
+            <property name="minDigitsAfterDecimalPoint" value="8"/>
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Operators.NegationOperatorSpacing"/>
+    <rule ref="SlevomatCodingStandard.Operators.RequireOnlyStandaloneIncrementAndDecrementOperators"/>
+    <rule ref="SlevomatCodingStandard.Operators.SpreadOperatorSpacing"/>
+    <rule ref="SlevomatCodingStandard.PHP.DisallowReference"/>
+    <rule ref="SlevomatCodingStandard.PHP.OptimizedFunctionsWithoutUnpacking"/>
+    <rule ref="SlevomatCodingStandard.PHP.RequireNowdoc"/>
+    <rule ref="SlevomatCodingStandard.Strings.DisallowVariableParsing"/>
+    <rule ref="SlevomatCodingStandard.Variables.DuplicateAssignmentToVariable"/>
+    <rule ref="SlevomatCodingStandard.Whitespaces.DuplicateSpaces"/>
+</ruleset>
