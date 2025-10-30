@@ -69,15 +69,15 @@
     #######################    CUSTOM    ############################
     #################################################################
     -->
-    <rule ref="PlotBox.WhiteSpace.DisallowContiguousNewlines"/>
-    <rule ref="PlotBox.WhiteSpace.SuperfluousNewlines"/>
-    <rule ref="PlotBox.Commenting.UselessDescription"/>
-    <rule ref="PlotBox.Commenting.DisallowSingleTypedArray"/>
-    <rule ref="PlotBox.Commenting.PhpDocInsideFunctionParams"/>
-    <rule ref="PlotBox.TypeHints.ReturnVoid"/>
+    <rule ref="PlotBoxPhpCodeStyle.WhiteSpace.DisallowContiguousNewlines"/>
+    <rule ref="PlotBoxPhpCodeStyle.WhiteSpace.SuperfluousNewlines"/>
+    <rule ref="PlotBoxPhpCodeStyle.Commenting.UselessDescription"/>
+    <rule ref="PlotBoxPhpCodeStyle.Commenting.DisallowSingleTypedArray"/>
+    <rule ref="PlotBoxPhpCodeStyle.Commenting.PhpDocInsideFunctionParams"/>
+    <rule ref="PlotBoxPhpCodeStyle.TypeHints.ReturnVoid"/>
 
     <!-- Modified Squiz version to disallow trailing comma (instead of enforce it) -->
-    <rule ref="PlotBox.Arrays.ArrayDeclaration"/>
+    <rule ref="PlotBoxPhpCodeStyle.Arrays.ArrayDeclaration"/>
 
     <!--
     #################################################################
