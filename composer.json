@@ -32,7 +32,7 @@
     "escapestudios/symfony2-coding-standard": "*",
     "phpcompatibility/php-compatibility": "*",
     "plotbox-io/php-git-ops": "dev-master",
-    "symfony/console": "^7.3",
+    "symfony/console": ">=6.0",
     "plotbox-io/phpcs-parse": "dev-master",
     "thecodingmachine/safe": "^3.3"
   },
