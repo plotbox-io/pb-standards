@@ -44,7 +44,8 @@ final class PhpStyleCommand extends Command
     /** @param list<string> $excludedDirectories */
     public function __construct(
         private ?string $realAppRoot = null,
-        private array $excludedDirectories = []
+        private array $excludedDirectories = [],
+        private ?string $phpVersion = null
     ) {
         parent::__construct(self::COMMAND_NAME);
         $this->cwd = getcwd();
@@ -144,16 +145,17 @@ final class PhpStyleCommand extends Command
         return count($issues) > 0 ? self::FAILURE : self::SUCCESS;
     }
 
-    /**
-     * @param list<string>|null $allTouched
-     * @noinspection PhpDocMissingThrowsInspection
-     */
+    /** @param list<string>|null $allTouched */
     private function getShellCommand(
         ?array $allTouched,
         string $sarbBaselinePath
     ): string {
-        /** @noinspection PhpUnhandledExceptionInspection */
-        $phpVersion = trim(file_get_contents($this->cwd . '/settings/PHP_VERSION'));
+        if ($this->phpVersion) {
+            $phpVersion = $this->phpVersion;
+        } else {
+            $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+        }
+
         $pathsToScan = $allTouched ?? self::WHITELISTED_DIRECTORIES;
 
         foreach ($pathsToScan as $key => $path) {
