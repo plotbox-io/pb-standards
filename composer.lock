@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9aefe00b9c298aec576943ce091dd376",
+    "content-hash": "95dd394ed514d419b14d8e4b3235d853",
     "packages": [
         {
             "name": "composer/semver",
@@ -169,16 +169,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/plotbox-io/sarb.git",
-                "reference": "7fdfecd19a9fe41089027f6129c2e49aa5d7085a"
+                "reference": "b68ce67e3a4026a239cbb175e192fdaed79d4ff2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/plotbox-io/sarb/zipball/7fdfecd19a9fe41089027f6129c2e49aa5d7085a",
-                "reference": "7fdfecd19a9fe41089027f6129c2e49aa5d7085a",
+                "url": "https://api.github.com/repos/plotbox-io/sarb/zipball/b68ce67e3a4026a239cbb175e192fdaed79d4ff2",
+                "reference": "b68ce67e3a4026a239cbb175e192fdaed79d4ff2",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.4",
+                "php": ">=8.1",
                 "symfony/config": ">=6.0",
                 "symfony/console": ">=6.0",
                 "symfony/dependency-injection": ">=6.0",
@@ -296,7 +296,7 @@
             "support": {
                 "source": "https://github.com/plotbox-io/sarb/tree/master"
             },
-            "time": "2025-10-30T17:50:29+00:00"
+            "time": "2025-10-31T13:07:21+00:00"
         },
         {
             "name": "dealerdirect/phpcodesniffer-composer-installer",
@@ -2466,7 +2466,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.4"
+        "php": ">=8.1"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"

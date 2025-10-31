@@ -17,8 +17,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-use function Safe\file_get_contents;
-
 /**
  * Optimised code style checker for PlotBox repositories. Will only check modified files (using git).
  * Will return results in the console with hyperlinks to files (using the real host path if provided).
