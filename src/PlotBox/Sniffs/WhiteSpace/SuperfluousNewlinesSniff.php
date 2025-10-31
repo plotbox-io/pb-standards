@@ -1,6 +1,6 @@
 <?php
 
-namespace PlotBox\PhpCodeStyle\Sniffs\WhiteSpace;
+namespace PlotBox\Standards\PlotBox\Sniffs\WhiteSpace;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;

@@ -1,0 +1,3 @@
+/home/richard/Development/PlotBox/pb-standards/vendor/bin/phpcs - --standard=PlotBox --encoding=utf-8 --report=xml --extensions=php --stdin-path=/home/richard/Development/PlotBox/pb-standards/src/PhpStyleCommand.php
+/home/richard/Development/PlotBox/pb-standards/vendor/bin/phpcs - --standard=PlotBox --encoding=utf-8 --report=xml --extensions=php --stdin-path=/home/richard/Development/PlotBox/pb-standards/src/PhpStyleCommand.php
+/home/richard/Development/PlotBox/pb-standards/vendor/bin/phpcs - --standard=PlotBox --encoding=utf-8 --report=xml --extensions=php --stdin-path=/home/richard/Development/PlotBox/pb-standards/src/PhpStyleCommand.php

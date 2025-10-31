@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace PlotBox\PhpCodeStyle\Sniffs\TypeHints;
+namespace PlotBox\Standards\PlotBox\Sniffs\TypeHints;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;

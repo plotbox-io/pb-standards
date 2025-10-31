@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace PlotBox\PhpCodeStyle\Sniffs\Commenting;
+namespace PlotBox\Standards\PlotBox\Sniffs\Commenting;
 
 use Exception;
 use PHP_CodeSniffer\Files\File;

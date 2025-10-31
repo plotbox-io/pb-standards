@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PlotBox\PhpCodeStyle\Sniffs\Commenting;
+namespace PlotBox\Standards\PlotBox\Sniffs\Commenting;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
@@ -16,6 +16,7 @@ use SlevomatCodingStandard\Helpers\DocCommentHelper;
 use SlevomatCodingStandard\Helpers\FunctionHelper;
 use SlevomatCodingStandard\Helpers\TypeHint;
 use SlevomatCodingStandard\Helpers\TypeHintHelper;
+
 use function array_key_exists;
 use function sprintf;
 use const T_FUNCTION;

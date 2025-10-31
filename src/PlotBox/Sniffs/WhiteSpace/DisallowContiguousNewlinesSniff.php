@@ -1,6 +1,6 @@
 <?php
 
-namespace PlotBox\PhpCodeStyle\Sniffs\WhiteSpace;
+namespace PlotBox\Standards\PlotBox\Sniffs\WhiteSpace;
 
 /**
  * This is different from the Squiz superfluous whitespace sniff in that it detects contiguous newlines outside

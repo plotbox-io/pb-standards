@@ -5,22 +5,43 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "PlotBox\\": "src/"
+      "PlotBox\\Standards\\": "src/"
     }
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/plotbox-io/php-git-ops"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/plotbox-io/phpcs-parse"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/plotbox-io/sarb"
+    }
+  ],
   "require": {
-    "php": ">=8.2",
+    "php": ">=8.4",
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
     "squizlabs/php_codesniffer": "^3.13",
     "mediawiki/mediawiki-codesniffer": "^48.0",
     "slevomat/coding-standard": "*",
     "rarst/phpcs-cognitive-complexity": "*",
     "escapestudios/symfony2-coding-standard": "*",
-    "phpcompatibility/php-compatibility": "*"
+    "phpcompatibility/php-compatibility": "*",
+    "plotbox-io/php-git-ops": "dev-master",
+    "symfony/console": "^7.3",
+    "plotbox-io/phpcs-parse": "dev-master",
+    "thecodingmachine/safe": "^3.3"
   },
   "config": {
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
+  },
+  "require-dev": {
+    "dave-liddament/sarb": "dev-master"
   }
 }
