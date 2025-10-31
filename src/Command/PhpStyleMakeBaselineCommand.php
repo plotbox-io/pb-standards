@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PlotBox\Standards\Command;
 
-use PlotBox\PhpGitOps\Git\Git;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,7 +24,6 @@ final class PhpStyleMakeBaselineCommand extends Command
     ) {
         parent::__construct(self::COMMAND_NAME);
         $this->appRoot = getcwd();
-        $this->git = new Git($this->appRoot);
     }
 
     /** @inheritdoc */
