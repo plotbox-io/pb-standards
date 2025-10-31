@@ -34,14 +34,12 @@
     "plotbox-io/php-git-ops": "dev-master",
     "symfony/console": ">=6.0",
     "plotbox-io/phpcs-parse": "dev-master",
-    "thecodingmachine/safe": "^3.3"
+    "thecodingmachine/safe": "^3.3",
+    "dave-liddament/sarb": "dev-master"
   },
   "config": {
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
-  },
-  "require-dev": {
-    "dave-liddament/sarb": "dev-master"
   }
 }
