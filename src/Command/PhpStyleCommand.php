@@ -130,7 +130,7 @@ final class PhpStyleCommand extends Command
             $fileLink = Util::makeConsoleLinkFromPath(
                 $phpcsIssue->getFile(),
                 $phpcsIssue->getLine(),
-                $this->getRealAppRoot(),
+                $this->realAppRoot,
                 100
             );
 
@@ -315,7 +315,11 @@ final class PhpStyleCommand extends Command
         }
 
         if (str_starts_with($type, 'PlotBox')) {
-            $link = 'file://' . $this->getRealAppRoot() . "/vendor/plotbox-io/standards/src/PlotBox/Sniffs/{$parts[1]}/{$parts[2]}Sniff.php";
+            $relativePath = "vendor/plotbox-io/standards/src/PlotBox/Sniffs/{$parts[1]}/{$parts[2]}Sniff.php";
+            if (!$this->realAppRoot) {
+                return $relativePath;
+            }
+            $link = 'file://' . $this->realAppRoot . '/' . $relativePath;
             return Util::makeConsoleLink($link, $uiType);
         }
 
@@ -333,10 +337,5 @@ final class PhpStyleCommand extends Command
             }
         }
         return $isExcluded;
-    }
-
-    private function getRealAppRoot(): string
-    {
-        return $this->realAppRoot ?: '/app';
     }
 }

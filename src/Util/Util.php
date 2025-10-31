@@ -40,12 +40,13 @@ EOL;
 
     /**
      * Take an internal container file path and format it as a link relative
-     * to the app root on the developer host
+     * to the app root on the developer host. If the app root is not provided,
+     * just return the relative path as text (no link).
      */
     public static function makeConsoleLinkFromPath(
         string $filePath,
         int $line,
-        string $realAppRoot,
+        ?string $realAppRoot,
         ?int $maxWidth = null
     ): string {
         $relativePath = StringHelper::removeFromStart('/app/', $filePath);
@@ -60,6 +61,10 @@ EOL;
                 $linkText,
                 $maxWidth
             );
+        }
+
+        if (!$realAppRoot) {
+            return $linkText;
         }
 
         return self::makeConsoleLink(
