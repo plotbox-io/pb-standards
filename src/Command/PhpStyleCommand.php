@@ -75,7 +75,7 @@ final class PhpStyleCommand extends Command
         $branchModifications = $this->getBranchModifications();
         $allTouched = $this->getModifiedPhpFiles($branchModifications);
         if (count($allTouched) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
-            $io->info('Checking style for directories: ' . implode(', ', self::WHITELISTED_DIRECTORIES) . "\n\n");
+            $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
             $allTouched = null;
         } elseif (count($allTouched) === 0) {
             $io->success('Style check passed - No relevant PHP files modified from parent');
@@ -143,6 +143,18 @@ final class PhpStyleCommand extends Command
         return count($issues) > 0 ? self::FAILURE : self::SUCCESS;
     }
 
+    /** @return list<string> */
+    private static function whitelistedDirsThatExist(): array
+    {
+        $existingDirs = [];
+        foreach (self::WHITELISTED_DIRECTORIES as $dir) {
+            if (is_dir($dir)) {
+                $existingDirs[] = $dir;
+            }
+        }
+        return $existingDirs;
+    }
+
     /** @param list<string>|null $allTouched */
     private function getShellCommand(
         ?array $allTouched,
@@ -154,7 +166,7 @@ final class PhpStyleCommand extends Command
             $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
         }
 
-        $pathsToScan = $allTouched ?? self::WHITELISTED_DIRECTORIES;
+        $pathsToScan = $allTouched ?? self::whitelistedDirsThatExist();
 
         foreach ($pathsToScan as $key => $path) {
             $pathsToScan[$key] = escapeshellarg($path);
@@ -254,7 +266,7 @@ final class PhpStyleCommand extends Command
     private function isPathInWhitelistedDirectories(string $touchedFile): bool
     {
         $isWhitelisted = false;
-        foreach (self::WHITELISTED_DIRECTORIES as $whitelistedDirectory) {
+        foreach (self::whitelistedDirsThatExist() as $whitelistedDirectory) {
             if (str_starts_with($touchedFile, $whitelistedDirectory)) {
                 $isWhitelisted = true;
                 break;
