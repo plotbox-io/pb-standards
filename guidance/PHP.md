@@ -11,6 +11,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Use `self`/`static` return types for fluent APIs or builders as appropriate.
 - Prefer value objects and enums over string/int primitives when they represent a domain concept.
 - For iterables/arrays, document generics with PHPDoc (e.g., `array<int, User>`, `list<Order>`), and validate contents where critical.
+- Prefer to strongly type variables via method input/output rather than `@var` annotations where possible.
 - DO NOT use legacy/abmbiguous iterable types like int[], string[], etc. as they do not convey the intended structure (list vs map) or type safety.
 - DO NOT add annotations like /** @var list<string> */ above constant arrays. This is redundant and adds unnecessary noise.
 
@@ -33,6 +34,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Use single quotes for strings unless you need to use double quotes (e.g. for interpolation)
 - Use short array syntax ([])
 - Use type-safe functions (e.g. in_array() with strict parameter set to true)
+- Never use the `empty()` function to check for null values. Prefer truthy/falsey checks for terseness, `isset()`, or strict comparison operators.
 - Use @inheritDoc in child classes or interface implementations for implemented or overridden methods (rather than repeating the phpdoc description)
 - Use dependency injection via constructor injection for service dependencies
 - Classes should be final by default unless they are explicitly designed for inheritance
@@ -43,7 +45,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Use named arguments when instantiating DTOs with many parameters for clarity
 - When referring to repositories as dependencies, their variable name should be like $somethingRepository (e.g., 'CustomerRepository' would be '$customerRepository')
     - Some long winded repository names can be shortened for brevity (e.g., 'TemporaryCustomerCredentialRepository' could be '$credentialRepository')
-- Do not add a comma after the last item in an array or argument list
+- Do not add a trailing comma after the last item in an array or argument list or function call argument list
 
 ### Errors & Exceptions
 - Throw domain‑specific exceptions with clear messages; include actionable context but no sensitive data.
@@ -51,8 +53,9 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 
 ### Functions & Methods
 - Keep functions small; single responsibility.
+- Method signatures should be split across multiple lines when they exceed 100 characters in length.
 - Use strict comparisons (`===`, `!==`).
-- Use short array syntax `[]`; do not add a trailing comma to the last item in single‑line arrays/argument lists.
+- Use short array syntax `[]`; do not add a trailing comma after the last item in an array or argument list or function call argument list.
 - Use single quotes for strings unless interpolation is required.
 - Prefer type‑safe library calls (e.g., `in_array($needle, $haystack, true)`).
 
