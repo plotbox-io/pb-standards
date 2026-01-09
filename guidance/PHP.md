@@ -12,6 +12,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Prefer value objects and enums over string/int primitives when they represent a domain concept.
 - For iterables/arrays, document generics with PHPDoc (e.g., `array<int, User>`, `list<Order>`), and validate contents where critical.
 - DO NOT use legacy/abmbiguous iterable types like int[], string[], etc. as they do not convey the intended structure (list vs map) or type safety.
+- DO NOT add annotations like /** @var list<string> */ above constant arrays. This is redundant and adds unnecessary noise.
 
 ### Object Design
 - Prefer composition over inheritance. Make classes `final` by default unless designed for extension.
