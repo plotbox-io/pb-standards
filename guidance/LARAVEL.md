@@ -3,8 +3,8 @@
 These rules focus on Laravel specifics. General PHP guidance lives in `PHP.md` and universal principles in `GENERAL.md`.
 
 ### General
-- Avoid using facades in new code. Use dependency injection instead
-- Avoid using the global helper functions in new code. Use dependency injection instead
+- Avoid using facades in new code. Use dependency injection instead.
+- Avoid using the global helper functions in new code. Use dependency injection instead.
 
 ### Eloquent Models
 - Follow Laravel naming and table conventions unless there is a strong reason not to.
@@ -33,15 +33,15 @@ These rules focus on Laravel specifics. General PHP guidance lives in `PHP.md` a
 ### Database & Repositories
 - Prefer query scopes and dedicated query classes for complex queries.
 - Use repositories where they provide a useful abstraction (e.g., aggregating multiple models or external data sources).
-- Use transactions for multi‑step writes; prefer `DB::transaction()` with retry where needed.
+- Use transactions for multi-step writes; prefer `DB::transaction()` with retry where needed.
 
-### API Resources & Serialization
+### API Resources & Serialisation
 - Use Laravel API Resources for HTTP JSON responses to decouple storage from representation.
 - Keep resources stable; avoid leaking internal field names.
 
 ### Events, Jobs & Queues
 - Use events to decouple side effects (e.g., notifications) from write paths.
-- Queue long‑running work; keep jobs idempotent and small. Use unique jobs when appropriate.
+- Queue long-running work; keep jobs idempotent and small. Use unique jobs when appropriate.
 - Handle failures with retries and backoff; capture contextual data but never sensitive secrets.
 
 ### Caching & Performance

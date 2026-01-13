@@ -27,7 +27,7 @@ These rules cover Vue 3 with the Composition API. General principles live in `GE
 ### UI, Styling & Accessibility
 - Use PrimeVue for components and Tailwind CSS for styling; prefer utility classes over deep custom CSS.
 - Follow a mobile‑first approach with Tailwind responsive utilities.
-- Ensure accessibility: semantic HTML, labelled controls, keyboard navigation, focus management, and colour‑contrast compliant designs.
+- Ensure accessibility: semantic HTML, labelled controls, keyboard navigation, focus management, and colour-contrast compliant designs.
 - Avoid inline styles; use Tailwind and CSS variables where necessary.
 
 ### API & Async

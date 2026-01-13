@@ -2,7 +2,7 @@
 
 This repository contains the PlotBox coding standard for PHP_CodeSniffer (PHPCS).
 
-It is packaged as a Composer installable PHPCS standard so you can include it in any PHP project and run it via `phpcs --standard=PlotBox`.
+It is packaged as a Composer-installable PHPCS standard so you can include it in any PHP project and run it via `phpcs --standard=PlotBox`.
 
 ## Install in a project
 
@@ -57,12 +57,12 @@ To auto-fix fixable issues:
   - phpcompatibility/php-compatibility
   - escapestudios/symfony2-coding-standard
   - rarst/phpcs-cognitive-complexity
-- Custom PlotBox sniffs under `src/Standards/PlotBox/Sniffs`
+- Custom PlotBox sniffs under `src/PlotBox/Sniffs`
 
 ## Development
 
-- Ruleset file: `src/Standards/PlotBox/ruleset.xml`
-- Custom sniffs are PSR-4 autoloaded under the `PlotBox\\` namespace from `src/Standards/PlotBox/`.
+- Ruleset file: `src/PlotBox/ruleset.xml`
+- Custom sniffs are PSR-4 autoloaded under the `PlotBox\\` namespace from `src/PlotBox/`.
 - After changing sniffs, run:
 
 ```bash

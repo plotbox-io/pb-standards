@@ -6,13 +6,13 @@ These rules focus on Symfony specifics. General PHP guidance lives in `PHP.md` a
 - Keep controllers thin: validate input, delegate to services, return responses.
 - Use argument value resolvers and ParamConverters judiciously; keep magic minimal and explicit.
 - Prefer attribute routing; group routes by feature/module.
-- Return DTOs serialized via normalizers or view models; avoid leaking Doctrine entities directly to the outside world.
+- Return DTOs serialised via normalisers or view models; avoid leaking Doctrine entities directly to the outside world.
 
 ### Services & Dependency Injection
 - Define services as `autowire: true`, `autoconfigure: true` where practical; use explicit service wiring for special cases.
 - Keep service constructors simple; inject interfaces, not concrete classes, where an abstraction exists.
 - Avoid using the container directly (`ContainerInterface`) in services; favour constructor injection.
-- Use `Kernel events` and subscribers/listeners for cross‑cutting concerns (logging, auditing), not inside controllers.
+- Use `Kernel` events and subscribers/listeners for cross-cutting concerns (logging, auditing), not inside controllers.
 
 ### Configuration & Environment
 - Keep environment‑specific config in `config/packages/{env}`; keep defaults in `config/packages`.
@@ -29,7 +29,7 @@ These rules focus on Symfony specifics. General PHP guidance lives in `PHP.md` a
 - Use typed properties and enums where supported; configure attribute mapping.
 - Repositories encapsulate query logic; avoid writing DQL in controllers/services.
 - Avoid N+1 queries; use `fetch joins` and `EntityManager::clear()` for long‑running processes.
-- Wrap multi‑step writes in transactions via `EntityManager` or `doctrine.transactions`.
+- Wrap multi-step writes in transactions via `EntityManager` or `doctrine.transactions`.
 
 ### Messenger, Queues & Async
 - Use Messenger for async commands/events; keep handlers idempotent and small.
@@ -43,7 +43,7 @@ These rules focus on Symfony specifics. General PHP guidance lives in `PHP.md` a
 ### Caching & Performance
 - Use Cache component with pool names and taggable caches where supported.
 - Apply HTTP caching (ETag/Last‑Modified, Cache‑Control) on read endpoints.
-- Use `LazyCommand`, `LazyEventDispatcher` and other lazy services to optimise boot time where needed.
+- Use `LazyCommand`, `LazyEventDispatcher`, and other lazy services to optimise boot time where needed.
 
 ### Console & CLI
 - Keep commands thin; delegate to services.
@@ -52,7 +52,7 @@ These rules focus on Symfony specifics. General PHP guidance lives in `PHP.md` a
 ### Security
 - Configure security in `security.yaml` (or attributes) with clear firewalls and access controls.
 - Use voters for complex authorisation logic; avoid sprinkling `isGranted()` checks throughout services.
-- Never expose stack traces or sensitive config in production; use proper error pages/handlers.
+- Never expose stack traces or sensitive configuration in production; use proper error pages/handlers.
 
 ### Testing
 - Use `KernelTestCase`/`WebTestCase` for integration/HTTP tests; use unit tests for services.
