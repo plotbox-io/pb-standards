@@ -160,7 +160,7 @@
     </rule>
     <rule ref="Generic.PHP.DisallowAlternativePHPTags"/>
     <rule ref="Generic.PHP.SAPIUsage"/>
-    <rule ref="Generic.Strings.UnnecessaryStringConcat"/>
+    
     <rule ref="Generic.VersionControl.GitMergeConflict"/>
     <rule ref="Generic.VersionControl.GitMergeConflict"/>
     <rule ref="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
