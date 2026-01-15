@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PlotBox\Standards\Command;
 
+use PlotBox\Standards\Util\Util;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,12 +27,6 @@ final class CompileAiGuidance extends Command
     private const string CURSOR_RULES_FILE = '.cursor/rules/all.mdc';
     private const string JUNIE_GUIDELINES_FILE = '.junie/guidelines.md';
 
-    public function __construct(
-        private string $realAppRoot
-    ) {
-        parent::__construct();
-    }
-
     /** @inheritDoc */
     protected function configure(): void
     {
@@ -43,7 +38,7 @@ final class CompileAiGuidance extends Command
     /** @inheritDoc */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $projectRoot = $this->realAppRoot;
+        $projectRoot = Util::getProjectRoot();
         chdir($projectRoot);
 
         if (!file_exists('REPO_GUIDANCE.md')) {

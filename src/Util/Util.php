@@ -73,6 +73,16 @@ EOL;
         );
     }
 
+    public static function getProjectRoot(): string
+    {
+        $dir = __DIR__;
+        while ($dir !== DIRECTORY_SEPARATOR && !file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
+            $dir = dirname($dir);
+        }
+
+        return $dir;
+    }
+
     public static function elipsesString(
         string $text,
         int $maxChars
