@@ -83,3 +83,5 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
  - For example, instead of `when_i_invoke_the_command`, use `when_i_create_a_new_user` (or something similar that reflects the business action being tested).
  - Same applies to `given` and `then` methods.
  - If doing some generic test setup, you can say 'given_i_am_creating_a_user' rather than 'given_i_construct_a_new_user_command' or similar.
+- If certain `given` statements are common across multiple tests, consider moving them to the test class `setUp()` method to reduce duplication.
+- If a given is implicit but also important to the understanding of the test, it is acceptable to include it as a single-line comment in the test method.
