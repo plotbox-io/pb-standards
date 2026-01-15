@@ -79,3 +79,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - All main methods (test, givens, whens, thens) should return `void` and not have any parameters. Prefer using class properties to share state between them.
 - Within the `given`, `when`, and `then` methods, other utility/technical methods can be used to keep the code DRY. These can be in `camelCase` and can use more technical terms.
 - Sometimes `given` statements may be implicit (i.e., the default set up state already has the necessary preconditions). In this case, it is acceptable to omit the `given` statement (or use a single-line comment to indicate the implicit `given`).
+- Do not use technical terms in the main test method names or given/when/then methods. Use business language only.
+ - For example, instead of `when_i_invoke_the_command`, use `when_i_create_a_new_user` (or something similar that reflects the business action being tested).
+ - Same applies to `given` and `then` methods.
+ - If doing some generic test setup, you can say 'given_i_am_creating_a_user' rather than 'given_i_construct_a_new_user_command' or similar.
