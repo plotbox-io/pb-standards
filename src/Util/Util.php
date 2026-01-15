@@ -76,7 +76,14 @@ EOL;
     public static function getProjectRoot(): string
     {
         $dir = __DIR__;
-        while ($dir !== DIRECTORY_SEPARATOR && !file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
+        while ($dir !== DIRECTORY_SEPARATOR) {
+            $composerJson = $dir . DIRECTORY_SEPARATOR . 'composer.json';
+            if (file_exists($composerJson)) {
+                // If we are in a vendor directory, we want to keep going up to find the project root
+                if (!str_contains($dir, DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR)) {
+                    return $dir;
+                }
+            }
             $dir = dirname($dir);
         }
 
