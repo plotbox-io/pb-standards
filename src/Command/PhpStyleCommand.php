@@ -97,6 +97,7 @@ final class PhpStyleCommand extends Command
 
         $issues = $this->getSarbIssues($resultJson);
         $issues = $this->makePathsRelative($issues);
+        $issues = $this->filterExcludedPaths($issues);
 
         $phpcsIssues = [];
         foreach ($issues as $sarbIssue) {
@@ -240,6 +241,21 @@ final class PhpStyleCommand extends Command
         }
 
         return $issues;
+    }
+
+    /**
+     * @param list<SarbCodeIssue> $issues
+     * @return list<SarbCodeIssue>
+     */
+    private function filterExcludedPaths(array $issues): array
+    {
+        foreach ($issues as $i => $issue) {
+            if ($this->isExcluded($issue->file)) {
+                unset($issues[$i]);
+            }
+        }
+
+        return array_values($issues);
     }
 
     private function replaceFromStart(
