@@ -235,9 +235,11 @@ final class PhpStyleCommand extends Command
      */
     private function makePathsRelative(array $issues): array
     {
+        $appRoot = Util::getProjectRoot();
         foreach ($issues as $issue) {
             $issue->file = $this->replaceFromStart('/opt/project/', $issue->file);
             $issue->file = $this->replaceFromStart('/app/', $issue->file);
+            $issue->file = $this->replaceFromStart($appRoot . '/', $issue->file);
         }
 
         return $issues;
