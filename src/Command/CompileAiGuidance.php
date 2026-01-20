@@ -17,15 +17,17 @@ final class CompileAiGuidance extends Command
 {
     private const string COMMAND_NAME = 'compile-ai-guidance';
 
-    private const array SOURCE_FILES = [
-        'REPO_GUIDANCE.md',
-        'vendor/plotbox-io/standards/guidance/GENERAL.md',
-        'vendor/plotbox-io/standards/guidance/PHP.md',
-        'vendor/plotbox-io/standards/guidance/VUE.md'
-    ];
-
     private const string CURSOR_RULES_FILE = '.cursor/rules/all.mdc';
     private const string JUNIE_GUIDELINES_FILE = '.junie/guidelines.md';
+
+    /**
+     * @param array<int, string> $modules
+     */
+    public function __construct(
+        private readonly array $modules = ['GENERAL', 'PHP']
+    ) {
+        parent::__construct();
+    }
 
     /** @inheritDoc */
     protected function configure(): void
@@ -58,8 +60,21 @@ final class CompileAiGuidance extends Command
 
     private function getCombinedContent(string $projectRoot): string
     {
+        $sourceFiles = ['REPO_GUIDANCE.md'];
+        foreach ($this->modules as $module) {
+            $module = strtoupper($module);
+            $vendorPath = "vendor/plotbox-io/standards/guidance/$module.md";
+            $localPath = "guidance/$module.md";
+
+            if (file_exists($projectRoot . '/' . $vendorPath)) {
+                $sourceFiles[] = $vendorPath;
+            } elseif (file_exists($projectRoot . '/' . $localPath)) {
+                $sourceFiles[] = $localPath;
+            }
+        }
+
         $content = '';
-        foreach (self::SOURCE_FILES as $file) {
+        foreach ($sourceFiles as $file) {
             $path = $projectRoot . '/' . $file;
             if (file_exists($path)) {
                 $content .= "## Source: $file\n\n";
