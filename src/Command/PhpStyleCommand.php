@@ -59,6 +59,10 @@ final class PhpStyleCommand extends Command
                 name: 'sarb-baseline',
                 description: 'Path to sarb baseline file'
             )
+            ->addOption(
+                name: 'ignore-baseline',
+                description: 'Run php style checks without filtering by the baseline'
+            )
             ->setDescription('Check PHP code style');
     }
 
@@ -87,7 +91,8 @@ final class PhpStyleCommand extends Command
         }
 
         $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->cwd . '/phpcs.baseline';
-        $shellCommand = $this->getShellCommand($allTouched, $sarbBaselinePath);
+        $ignoreBaseline = (bool) $input->getOption('ignore-baseline');
+        $shellCommand = $this->getShellCommand($allTouched, $sarbBaselinePath, $ignoreBaseline);
         $result = Shell::exec($shellCommand);
         $resultJson = $result->stdOut;
         if (!$resultJson) {
@@ -95,7 +100,7 @@ final class PhpStyleCommand extends Command
             return Command::INVALID;
         }
 
-        $issues = $this->getSarbIssues($resultJson);
+        $issues = $this->getSarbIssues($resultJson, $ignoreBaseline);
         $issues = $this->makePathsRelative($issues);
         $issues = $this->filterExcludedPaths($issues);
 
@@ -159,7 +164,8 @@ final class PhpStyleCommand extends Command
     /** @param list<string>|null $allTouched */
     private function getShellCommand(
         ?array $allTouched,
-        string $sarbBaselinePath
+        string $sarbBaselinePath,
+        bool $ignoreBaseline = false
     ): string {
         if ($this->phpVersion) {
             $phpVersion = $this->phpVersion;
@@ -176,13 +182,19 @@ final class PhpStyleCommand extends Command
 
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
-        return "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
+        $phpcsCommand = "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
             --runtime-set testVersion $phpVersion \
             --extensions=php \
             --parallel=" . self::NUM_THREADS . " \
             --standard=Plotbox \
             --report=json \
-            $allPaths | uniq \
+            $allPaths | uniq";
+
+        if ($ignoreBaseline) {
+            return $phpcsCommand;
+        }
+
+        return "$phpcsCommand \
         | $lenientPhpRuntime \
             ./vendor/bin/sarb \
             --output-format=json \
@@ -272,9 +284,19 @@ final class PhpStyleCommand extends Command
     }
 
     /** @return list<SarbCodeIssue> */
-    private function getSarbIssues(string $resultJson): array
+    private function getSarbIssues(string $resultJson, bool $ignoreBaseline): array
     {
         $issues = json_decode($resultJson);
+        if ($ignoreBaseline) {
+            $phpcsIssues = [];
+            foreach ($issues->files as $file => $details) {
+                foreach ($details->messages as $message) {
+                    $phpcsIssues[] = SarbCodeIssue::fromPhpcs($file, $message);
+                }
+            }
+            return $phpcsIssues;
+        }
+
         foreach ($issues as $i => $issue) {
             $issues[$i] = SarbCodeIssue::fromObject($issue);
         }

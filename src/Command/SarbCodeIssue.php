@@ -29,4 +29,16 @@ final class SarbCodeIssue
             $std->original_tool_details
         );
     }
+
+    public static function fromPhpcs(string $file, object $phpcs): self
+    {
+        return new self(
+            $file,
+            $phpcs->line,
+            $phpcs->type,
+            $phpcs->message,
+            (string) $phpcs->severity,
+            $phpcs
+        );
+    }
 }
