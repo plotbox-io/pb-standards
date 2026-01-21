@@ -13,7 +13,9 @@ use PlotBox\Standards\Util\Shell;
 use PlotBox\Standards\Util\Util;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -55,6 +57,11 @@ final class PhpStyleCommand extends Command
     {
         $this
             ->setName(self::COMMAND_NAME)
+            ->addArgument(
+                name: 'path',
+                mode: InputArgument::IS_ARRAY,
+                description: 'Force scanning on certain directories/files'
+            )
             ->addOption(
                 name: 'sarb-baseline',
                 description: 'Path to sarb baseline file'
@@ -76,18 +83,25 @@ final class PhpStyleCommand extends Command
 
         $io = new SymfonyStyle($input, $output);
 
-        $branchModifications = $this->getBranchModifications();
-        $allTouched = $this->getModifiedPhpFiles($branchModifications);
-        if (count($allTouched) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
-            $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
-            $allTouched = null;
-        } elseif (count($allTouched) === 0) {
-            $io->success('Style check passed - No relevant PHP files modified from parent');
-            return self::SUCCESS;
+        $paths = $input->getArgument('path');
+
+        if (count($paths) > 0) {
+            $allTouched = $paths;
+            $io->info('Checking style for specified paths: ' . implode(', ', $allTouched) . "\n\n");
         } else {
-            echo "Checking style in changes since git ancestor: {$branchModifications->getParent()->getName()}\n\n";
-            $fileListString = $this->getFileListString($allTouched, $branchModifications);
-            echo "Checking style for files:\n" . $fileListString . "\n\n";
+            $branchModifications = $this->getBranchModifications();
+            $allTouched = $this->getModifiedPhpFiles($branchModifications);
+            if (count($allTouched) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
+                $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
+                $allTouched = null;
+            } elseif (count($allTouched) === 0) {
+                $io->success('Style check passed - No relevant PHP files modified from parent');
+                return self::SUCCESS;
+            } else {
+                echo "Checking style in changes since git ancestor: {$branchModifications->getParent()->getName()}\n\n";
+                $fileListString = $this->getFileListString($allTouched, $branchModifications);
+                echo "Checking style for files:\n" . $fileListString . "\n\n";
+            }
         }
 
         $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->cwd . '/phpcs.baseline';
