@@ -348,15 +348,24 @@ final class PhpStyleCommand extends Command
         array $allTouched,
         BranchModifications $branchModifications
     ): string {
+        $filesToDisplay = array_slice($allTouched, 0, 10);
         $fileList = [];
-        foreach ($allTouched as $file) {
+        foreach ($filesToDisplay as $file) {
             $newPart = '';
             if ($branchModifications->isNewFile(new RelativeFile($file))) {
                 $newPart = ' (NEW)';
             }
             $fileList[] = " - {$newPart} {$file}";
         }
-        return implode("\n", $fileList);
+
+        $output = implode("\n", $fileList);
+
+        if (count($allTouched) > 10) {
+            $remainingCount = count($allTouched) - 10;
+            $output .= "\n(And $remainingCount more files...)";
+        }
+
+        return $output;
     }
 
     private function tryMakeClickableLink(string $type): string
