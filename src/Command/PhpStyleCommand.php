@@ -25,7 +25,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 final class PhpStyleCommand extends Command
 {
-    private const int MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE = 400;
+    private const int MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE = 1000;
     private const int NUM_THREADS = 6;
 
     private const array WHITELISTED_DIRECTORIES = [
@@ -73,7 +73,6 @@ final class PhpStyleCommand extends Command
             ->setDescription('Check PHP code style');
     }
 
-    /** @inheritdoc */
     protected function execute(
         InputInterface $input,
         OutputInterface $output
@@ -83,44 +82,99 @@ final class PhpStyleCommand extends Command
 
         $io = new SymfonyStyle($input, $output);
 
-        $paths = $input->getArgument('path');
+        $filesToCheck = $this->resolveFilesToCheck($input, $io);
+        if ($filesToCheck === []) {
+            $io->success('Style check passed - No relevant PHP files modified from parent');
+            return self::SUCCESS;
+        }
 
-        if (count($paths) > 0) {
-            $allTouched = $paths;
-            $io->info('Checking style for specified paths: ' . implode(', ', $allTouched) . "\n\n");
-        } else {
-            $branchModifications = $this->getBranchModifications();
-            $allTouched = $this->getModifiedPhpFiles($branchModifications);
-            if (count($allTouched) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
-                $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
-                $allTouched = null;
-            } elseif (count($allTouched) === 0) {
-                $io->success('Style check passed - No relevant PHP files modified from parent');
+        $tempFileList = $this->createTempFileList($filesToCheck);
+
+        try {
+            $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->cwd . '/phpcs.baseline';
+            $ignoreBaseline = (bool) $input->getOption('ignore-baseline');
+            $shellCommand = $this->getShellCommand($tempFileList, $sarbBaselinePath, $ignoreBaseline);
+
+            $result = Shell::exec($shellCommand);
+
+            if (!$result->stdOut) {
+                $io->error("Error: No output received from phpcs. Command:\n" . $shellCommand);
+                return Command::INVALID;
+            }
+
+            $issues = $this->getProcessedIssues($result->stdOut, $ignoreBaseline);
+
+            if (count($issues) === 0) {
+                $io->success('Style check passed!');
+                $io->writeln(Util::thumbsUpAscii());
                 return self::SUCCESS;
-            } else {
-                echo "Checking style in changes since git ancestor: {$branchModifications->getParent()->getName()}\n\n";
-                $fileListString = $this->getFileListString($allTouched, $branchModifications);
-                echo "Checking style for files:\n" . $fileListString . "\n\n";
+            }
+
+            $this->renderIssuesTable($issues, $output);
+
+            return self::FAILURE;
+        } finally {
+            if ($tempFileList) {
+                @unlink($tempFileList);
             }
         }
+    }
 
-        $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->cwd . '/phpcs.baseline';
-        $ignoreBaseline = (bool) $input->getOption('ignore-baseline');
-        $shellCommand = $this->getShellCommand($allTouched, $sarbBaselinePath, $ignoreBaseline);
-        $result = Shell::exec($shellCommand);
-        $resultJson = $result->stdOut;
-        if (!$resultJson) {
-            $io->error("Error: No output received from phpcs. Command:\n" . $shellCommand);
-            return Command::INVALID;
+    /**
+     * @return list<string>|null Null means fallback to whitelisted directories
+     */
+    private function resolveFilesToCheck(InputInterface $input, SymfonyStyle $io): ?array
+    {
+        $paths = $input->getArgument('path');
+        if (count($paths) > 0) {
+            $io->info('Checking style for specified paths: ' . implode(', ', $paths) . "\n\n");
+            return $paths;
         }
 
-        $issues = $this->getSarbIssues($resultJson, $ignoreBaseline);
-        $issues = $this->makePathsRelative($issues);
-        $issues = $this->filterExcludedPaths($issues);
+        $branchModifications = $this->getBranchModifications();
+        $modifiedFiles = $this->getModifiedPhpFiles($branchModifications);
 
-        $phpcsIssues = [];
-        foreach ($issues as $sarbIssue) {
-            $phpcsIssues[] = new PhpcsCodeIssue(
+        if (count($modifiedFiles) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
+            $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
+            return null;
+        }
+
+        if (count($modifiedFiles) === 0) {
+            return [];
+        }
+
+        echo "Checking style in changes since git ancestor: {$branchModifications->getParent()->getName()}\n\n";
+        echo "Checking style for files:\n" . $this->getFileListString($modifiedFiles, $branchModifications) . "\n\n";
+
+        return $modifiedFiles;
+    }
+
+    /**
+     * @param list<string>|null $files
+     */
+    private function createTempFileList(?array $files): ?string
+    {
+        if ($files === null) {
+            return null;
+        }
+
+        $tempFileList = tempnam(sys_get_temp_dir(), 'phpcs_file_list_');
+        file_put_contents($tempFileList, implode("\n", $files));
+
+        return $tempFileList;
+    }
+
+    /**
+     * @return list<PhpcsCodeIssue>
+     */
+    private function getProcessedIssues(string $resultJson, bool $ignoreBaseline): array
+    {
+        $sarbIssues = $this->getSarbIssues($resultJson, $ignoreBaseline);
+        $sarbIssues = $this->makePathsRelative($sarbIssues);
+        $sarbIssues = $this->filterExcludedPaths($sarbIssues);
+
+        return array_map(static function (SarbCodeIssue $sarbIssue): PhpcsCodeIssue {
+            return new PhpcsCodeIssue(
                 $sarbIssue->file,
                 $sarbIssue->originalToolDetails->line,
                 $sarbIssue->originalToolDetails->column,
@@ -130,37 +184,31 @@ final class PhpStyleCommand extends Command
                 $sarbIssue->originalToolDetails->severity,
                 $sarbIssue->originalToolDetails->fixable
             );
-        }
+        }, $sarbIssues);
+    }
 
-        if (count($phpcsIssues) === 0) {
-            $io->success('Style check passed!');
-            $io->writeln(Util::thumbsUpAscii());
-            return self::SUCCESS;
-        }
-
+    /**
+     * @param list<PhpcsCodeIssue> $issues
+     */
+    private function renderIssuesTable(array $issues, OutputInterface $output): void
+    {
         $table = new Table($output);
         $table->setHeaders(['File', '(Shortened) Type', 'Message']);
-        foreach ($phpcsIssues as $phpcsIssue) {
-            $type = $this->tryMakeClickableLink(
-                $phpcsIssue->getSource()
-            );
 
-            $fileLink = Util::makeConsoleLinkFromPath(
-                $phpcsIssue->getFile(),
-                $phpcsIssue->getLine(),
-                $this->realAppRoot,
-                100
-            );
-
+        foreach ($issues as $issue) {
             $table->addRow([
-                $fileLink,
-                $type,
-                Util::elipsesString($phpcsIssue->getMessage(), maxChars: 50)
+                Util::makeConsoleLinkFromPath(
+                    $issue->getFile(),
+                    $issue->getLine(),
+                    $this->realAppRoot,
+                    100
+                ),
+                $this->tryMakeClickableLink($issue->getSource()),
+                Util::elipsesString($issue->getMessage(), maxChars: 50)
             ]);
         }
-        $table->render();
 
-        return count($issues) > 0 ? self::FAILURE : self::SUCCESS;
+        $table->render();
     }
 
     /** @return list<string> */
@@ -175,9 +223,9 @@ final class PhpStyleCommand extends Command
         return $existingDirs;
     }
 
-    /** @param list<string>|null $allTouched */
+    /** @param string|null $tempFileListPath */
     private function getShellCommand(
-        ?array $allTouched,
+        ?string $tempFileListPath,
         string $sarbBaselinePath,
         bool $ignoreBaseline = false
     ): string {
@@ -187,12 +235,15 @@ final class PhpStyleCommand extends Command
             $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
         }
 
-        $pathsToScan = $allTouched ?? self::whitelistedDirsThatExist();
-
-        foreach ($pathsToScan as $key => $path) {
-            $pathsToScan[$key] = escapeshellarg($path);
+        if ($tempFileListPath) {
+            $pathsToScan = '--file-list=' . escapeshellarg($tempFileListPath);
+        } else {
+            $existingDirs = self::whitelistedDirsThatExist();
+            foreach ($existingDirs as $key => $path) {
+                $existingDirs[$key] = escapeshellarg($path);
+            }
+            $pathsToScan = implode(' ', $existingDirs);
         }
-        $allPaths = implode(' ', $pathsToScan);
 
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
@@ -202,7 +253,7 @@ final class PhpStyleCommand extends Command
             --parallel=" . self::NUM_THREADS . " \
             --standard=Plotbox \
             --report=json \
-            $allPaths | uniq";
+            $pathsToScan | uniq";
 
         if ($ignoreBaseline) {
             return $phpcsCommand;
@@ -223,36 +274,20 @@ final class PhpStyleCommand extends Command
     }
 
     /** @return list<string> */
-    // phpcs:ignore CognitiveComplexity.Complexity.MaximumComplexity.TooHigh
     private function getModifiedPhpFiles(
         BranchModifications $branchModifications
     ): array {
-        $allTouched = $branchModifications->getModifiedFilePaths();
-        foreach ($allTouched as $i => $touchedFile) {
-            if (!file_exists($this->cwd . '/' . $touchedFile)) {
-                unset($allTouched[$i]);
-            }
-        }
+        return array_values(array_filter(
+            $branchModifications->getModifiedFilePaths(),
+            function (string $file): bool {
+                $fullPath = $this->cwd . '/' . $file;
 
-        foreach ($allTouched as $i => $touchedFile) {
-            if (!str_ends_with($touchedFile, '.php')) {
-                unset($allTouched[$i]);
+                return file_exists($fullPath)
+                    && str_ends_with($file, '.php')
+                    && $this->isPathInWhitelistedDirectories($file)
+                    && !$this->isExcluded($file);
             }
-        }
-
-        foreach ($allTouched as $i => $touchedFile) {
-            if (!$this->isPathInWhitelistedDirectories($touchedFile)) {
-                unset($allTouched[$i]);
-            }
-        }
-
-        foreach ($allTouched as $i => $touchedFile) {
-            if ($this->isExcluded($touchedFile)) {
-                unset($allTouched[$i]);
-            }
-        }
-
-        return array_values($allTouched);
+        ));
     }
 
     /**
@@ -263,12 +298,25 @@ final class PhpStyleCommand extends Command
     {
         $appRoot = Util::getProjectRoot();
         foreach ($issues as $issue) {
-            $issue->file = $this->replaceFromStart('/opt/project/', $issue->file);
-            $issue->file = $this->replaceFromStart('/app/', $issue->file);
-            $issue->file = $this->replaceFromStart($appRoot . '/', $issue->file);
+            $issue->file = $this->stripPrefixes($issue->file, [
+                '/opt/project/',
+                '/app/',
+                $appRoot . '/',
+            ]);
         }
 
         return $issues;
+    }
+
+    private function stripPrefixes(string $haystack, array $prefixes): string
+    {
+        foreach ($prefixes as $prefix) {
+            if (str_starts_with($haystack, $prefix)) {
+                return substr($haystack, strlen($prefix));
+            }
+        }
+
+        return $haystack;
     }
 
     /**
@@ -286,16 +334,6 @@ final class PhpStyleCommand extends Command
         return array_values($issues);
     }
 
-    private function replaceFromStart(
-        string $needle,
-        string $haystack
-    ): string {
-        if (str_starts_with($haystack, $needle)) {
-            return substr($haystack, strlen($needle));
-        }
-
-        return $haystack;
-    }
 
     /** @return list<SarbCodeIssue> */
     private function getSarbIssues(string $resultJson, bool $ignoreBaseline): array
@@ -319,14 +357,12 @@ final class PhpStyleCommand extends Command
 
     private function isPathInWhitelistedDirectories(string $touchedFile): bool
     {
-        $isWhitelisted = false;
         foreach (self::whitelistedDirsThatExist() as $whitelistedDirectory) {
             if (str_starts_with($touchedFile, $whitelistedDirectory)) {
-                $isWhitelisted = true;
-                break;
+                return true;
             }
         }
-        return $isWhitelisted;
+        return false;
     }
 
     /** @param list<string> $allTouched */
@@ -345,36 +381,28 @@ final class PhpStyleCommand extends Command
         return implode("\n", $fileList);
     }
 
-    private function tryMakeClickableLink(
-        string $type
-    ): string {
+    private function tryMakeClickableLink(string $type): string
+    {
         $parts = explode('.', $type);
+        if (count($parts) < 4) {
+            return $type;
+        }
+
         $uiType = "{$parts[2]}.{$parts[3]}";
+
         if (str_starts_with($type, 'Slevomat')) {
-            $link = 'https://github.com/slevomat/coding-standard?tab=readme-ov-file#:~:text=';
-            $link .= implode('.', array_slice($parts, 0, 3));
+            $link = 'https://github.com/slevomat/coding-standard?tab=readme-ov-file#:~:text=' . implode('.', array_slice($parts, 0, 3));
             return Util::makeConsoleLink($link, $uiType);
         }
 
-        $codeSnifferOwnedRulesets = [
-            'Squiz',
-            'PSR1',
-            'Generic',
-            'PEAR',
-            'MySource',
-            'PSR2',
-            'PSR12',
-            'Zend'
-        ];
+        $codeSnifferOwnedRulesets = ['Squiz', 'PSR1', 'Generic', 'PEAR', 'MySource', 'PSR2', 'PSR12', 'Zend'];
         if (in_array($parts[0], $codeSnifferOwnedRulesets)) {
-            $link = 'https://github.com/squizlabs/PHP_CodeSniffer/blob/master/src/Standards';
-            $link .= "/{$parts[0]}/Sniffs/{$parts[1]}/{$parts[2]}Sniff.php";
+            $link = "https://github.com/squizlabs/PHP_CodeSniffer/blob/master/src/Standards/{$parts[0]}/Sniffs/{$parts[1]}/{$parts[2]}Sniff.php";
             return Util::makeConsoleLink($link, $uiType);
         }
 
         if (str_starts_with($type, 'MediaWiki')) {
-            $link = 'https://github.com/wikimedia/mediawiki-tools-codesniffer/blob/master/MediaWiki/Sniffs/';
-            $link .= "{$parts[1]}/{$parts[2]}Sniff.php";
+            $link = "https://github.com/wikimedia/mediawiki-tools-codesniffer/blob/master/MediaWiki/Sniffs/{$parts[1]}/{$parts[2]}Sniff.php";
             return Util::makeConsoleLink($link, $uiType);
         }
 
@@ -390,16 +418,13 @@ final class PhpStyleCommand extends Command
         return $uiType;
     }
 
-    private function isExcluded(
-        string $touchedFile
-    ): bool {
-        $isExcluded = false;
+    private function isExcluded(string $touchedFile): bool
+    {
         foreach ($this->excludedDirectories as $excludedDirectory) {
             if (str_starts_with($touchedFile, $excludedDirectory)) {
-                $isExcluded = true;
-                break;
+                return true;
             }
         }
-        return $isExcluded;
+        return false;
     }
 }
