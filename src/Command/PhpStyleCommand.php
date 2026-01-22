@@ -15,7 +15,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -25,7 +24,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 final class PhpStyleCommand extends Command
 {
-    private const int MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE = 1000;
     private const int NUM_THREADS = 6;
 
     private const array WHITELISTED_DIRECTORIES = [
@@ -114,16 +112,14 @@ final class PhpStyleCommand extends Command
 
             return self::FAILURE;
         } finally {
-            if ($tempFileList) {
-                @unlink($tempFileList);
-            }
+            @unlink($tempFileList);
         }
     }
 
     /**
-     * @return list<string>|null Null means fallback to whitelisted directories
+     * @return list<string>
      */
-    private function resolveFilesToCheck(InputInterface $input, SymfonyStyle $io): ?array
+    private function resolveFilesToCheck(InputInterface $input, SymfonyStyle $io): array
     {
         $paths = $input->getArgument('path');
         if (count($paths) > 0) {
@@ -133,11 +129,6 @@ final class PhpStyleCommand extends Command
 
         $branchModifications = $this->getBranchModifications();
         $modifiedFiles = $this->getModifiedPhpFiles($branchModifications);
-
-        if (count($modifiedFiles) > self::MAX_FILES_CHANGED_BEFORE_IGNORE_CODE_STYLE) {
-            $io->info('Checking style for directories: ' . implode(', ', self::whitelistedDirsThatExist()) . "\n\n");
-            return null;
-        }
 
         if (count($modifiedFiles) === 0) {
             return [];
@@ -150,14 +141,10 @@ final class PhpStyleCommand extends Command
     }
 
     /**
-     * @param list<string>|null $files
+     * @param list<string> $files
      */
-    private function createTempFileList(?array $files): ?string
+    private function createTempFileList(array $files): string
     {
-        if ($files === null) {
-            return null;
-        }
-
         $tempFileList = tempnam(sys_get_temp_dir(), 'phpcs_file_list_');
         file_put_contents($tempFileList, implode("\n", $files));
 
@@ -223,9 +210,8 @@ final class PhpStyleCommand extends Command
         return $existingDirs;
     }
 
-    /** @param string|null $tempFileListPath */
     private function getShellCommand(
-        ?string $tempFileListPath,
+        string $tempFileListPath,
         string $sarbBaselinePath,
         bool $ignoreBaseline = false
     ): string {
@@ -235,15 +221,7 @@ final class PhpStyleCommand extends Command
             $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
         }
 
-        if ($tempFileListPath) {
-            $pathsToScan = '--file-list=' . escapeshellarg($tempFileListPath);
-        } else {
-            $existingDirs = self::whitelistedDirsThatExist();
-            foreach ($existingDirs as $key => $path) {
-                $existingDirs[$key] = escapeshellarg($path);
-            }
-            $pathsToScan = implode(' ', $existingDirs);
-        }
+        $pathsToScan = '--file-list=' . escapeshellarg($tempFileListPath);
 
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
