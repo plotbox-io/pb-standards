@@ -5,9 +5,11 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 ### Language Level
 - Use the latest PHP features available to the project runtime (e.g., PHP 8.2+/8.3+/8.4 where applicable).
 - Always declare strict types in new files: `declare(strict_types=1);` Be careful when adding to legacy files.
+- Prefer to use thecodingmachine/safe library functions for file system to replace problematic native PHP functions that can return false on failure.
 
 ### Types & Contracts
 - Use native type hints for all parameters and return types.
+- Prefer the form `?string` over `string|null` for simple nullable types.
 - Use `self`/`static` return types for fluent APIs or builders as appropriate.
 - Prefer value objects and enums over string/int primitives when they represent a domain concept.
 - For iterables/arrays, document generics with PHPDoc (e.g., `array<int, User>`, `list<Order>`), and validate contents where critical.
@@ -36,15 +38,29 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Use type-safe functions (e.g. in_array() with strict parameter set to true).
 - Never use the `empty()` function to check for null values. Prefer truthy/falsey checks for terseness, `isset()`, or strict comparison operators.
 - Use @inheritDoc in child classes or interface implementations for implemented or overridden methods (rather than repeating the PHPDoc description).
+- PHPdocs with a single tag should be on a single line (e.g., `/** @return int */`).
 - Use dependency injection via constructor injection for service dependencies.
 - Classes should be final by default unless they are explicitly designed for inheritance.
 - Use private visibility for properties and methods by default. Only use protected visibility when necessary for inheritance.
 - Use traits sparingly and only when there is a very good reason to do so.
+- Class contents should be ordered as follows:
+  - Trait uses
+  - Constants
+  - Properties
+  - Constructor
+  - Public methods
+  - Protected methods
+  - Private methods
+- Constants should be defined in UPPER_SNAKE_CASE and grouped together near the top of the class with no blank lines between them.
+- There should be a space between these groupings but no blank lines within a grouping.
+- There should be a single newline between methods (without any other whitespace).
 - Avoid using the readonly property modifier in general except where it is very beneficial (e.g., for simple DTOs), and in those cases only on the class level rather than individual properties. The extra noise is not usually worth the minor benefits.
 - Use constructor property promotion for DTOs.
 - Use named arguments when instantiating DTOs with many parameters for clarity.
 - When referring to repositories as dependencies, their variable name should be like `$somethingRepository` (e.g., 'CustomerRepository' would be `$customerRepository`).
     - Some long-winded repository names can be shortened for brevity (e.g., 'TemporaryCustomerCredentialRepository' could be `$credentialRepository`).
+- For chained method call following a new object creation, prefer to not surround with outer parentheses.
+    - e.g. `$obj = new ClassName()->method();` instead of `$obj = (new ClassName())->method();`
 - Do not add a trailing comma after the last item in an array or argument list or function call argument list.
 
 ### Errors & Exceptions
@@ -73,15 +89,27 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Focus unit testing primarily on (use-case) handlers.
 - Prefer fakes over mocks in unit tests (i.e., make fake implementations of interfaces rather than mocking them).
 - Use PHPUnit for unit tests.
+- Each test class should focus on a single SUT (class under test).
+  - The SUT must be a property of the class and named as `$sut`.
+  - The SUT must be constructed only in `setUp()` (using the dependency injection container ideally).
+  - The SUT must not be re-constructed again after the initial `setUp()`.
 - Each test name should start with `should_`.
-- Each test should be comprised of only methods that start with `given_`, `when_`, or `then_`.
+- Each test should be comprised of only calls to `given_`, `when_`, or `then_` methods (with the exception of exception expectations).
+- `setUp()` and similar PHPUnit overridden methods should always be first before other methods.
+- Helper methods should be private and placed after public test methods. However, PHPUnit 'data provider' helper methods must be public.
+- When defining model IDs in tests, use arbitrary but differing numbers, starting at 1000 to avoid collisions with real data (e.g. 1000, 1001, 1002 etc).
+- Use `@inheritDoc` method annotation above overridden methods from base test class.
+- Always use `given_` rather than continuation methods like `and_`.
+- `given_` methods should contain groups of related setup code that can be summarized with a business-readable name.
+- In less common cases, we can allow arguments to be passed to `given_` methods if it significantly improves readability, but it should be avoided when possible.
 - All main methods (test, givens, whens, thens) should use plain business language and avoid technical terms (e.g., `should_create_user` rather than `should_invoke_create_method_on_user_repository`).
-- All main methods (test, givens, whens, thens) should return `void` and not have any parameters. Prefer using class properties to share state between them.
+- All main methods (test, givens, whens, thens) should return `void` and not have any parameters (except where arguments for `given_` methods significantly improve readability). Prefer using class properties to share state between them.
 - Within the `given`, `when`, and `then` methods, other utility/technical methods can be used to keep the code DRY. These can be in `camelCase` and can use more technical terms.
 - Sometimes `given` statements may be implicit (i.e., the default set up state already has the necessary preconditions). In this case, it is acceptable to omit the `given` statement (or use a single-line comment to indicate the implicit `given`).
 - Do not use technical terms in the main test method names or given/when/then methods. Use business language only.
- - For example, instead of `when_i_invoke_the_command`, use `when_i_create_a_new_user` (or something similar that reflects the business action being tested).
- - Same applies to `given` and `then` methods.
- - If doing some generic test setup, you can say 'given_i_am_creating_a_user' rather than 'given_i_construct_a_new_user_command' or similar.
+  - For example, instead of `when_i_invoke_the_command`, use `when_i_create_a_new_user` (or something similar that reflects the business action being tested).
+  - Same applies to `given` and `then` methods.
+  - If doing some generic test setup, you can say 'given_i_am_creating_a_user' rather than 'given_i_construct_a_new_user_command' or similar.
 - If certain `given` statements are common across multiple tests, consider moving them to the test class `setUp()` method to reduce duplication.
 - If a given is implicit but also important to the understanding of the test, it is acceptable to include it as a single-line comment in the test method.
+- Use `should_` prefix for test methods.
