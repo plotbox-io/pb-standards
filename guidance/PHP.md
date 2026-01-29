@@ -43,6 +43,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Classes should be final by default unless they are explicitly designed for inheritance.
 - Use private visibility for properties and methods by default. Only use protected visibility when necessary for inheritance.
 - Use traits sparingly and only when there is a very good reason to do so.
+- All PHP base functions and methods should have a corresponding 'use' statement at the top of the file.
 - Class contents should be ordered as follows:
   - Trait uses
   - Constants

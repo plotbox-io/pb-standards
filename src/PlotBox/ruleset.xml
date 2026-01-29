@@ -343,8 +343,7 @@
     <rule ref="SlevomatCodingStandard.Namespaces.UseFromSameNamespace"/>
     <rule ref="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly">
         <properties>
-            <!-- Use statements for functions/constants not available until PHP6. We must allow for now.. -->
-            <property name="allowFullyQualifiedGlobalFunctions" value="true"/>
+            <property name="allowFullyQualifiedGlobalFunctions" value="false"/>
             <property name="allowFullyQualifiedGlobalConstants" value="true"/>
         </properties>
     </rule>
