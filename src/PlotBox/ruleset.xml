@@ -347,8 +347,8 @@
             <property name="allowFullyQualifiedNameForCollidingClasses" value="false"/>
             <property name="allowFullyQualifiedNameForCollidingFunctions" value="false"/>
             <property name="allowFullyQualifiedNameForCollidingConstants" value="false"/>
-            <property name="allowFallbackGlobalFunctions" value="false"/>
-            <property name="allowFallbackGlobalConstants" value="false"/>
+            <property name="allowFallbackGlobalFunctions" value="true"/>
+            <property name="allowFallbackGlobalConstants" value="true"/>
             <property name="allowFullyQualifiedGlobalFunctions" value="false"/>
             <property name="allowFullyQualifiedGlobalConstants" value="false"/>
             <property name="allowPartialUses" value="false"/>
