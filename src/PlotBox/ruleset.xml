@@ -25,11 +25,19 @@
     </rule>
     <rule ref="PSR12"/>
 
-    <!-- Override PSR12 120 character soft line limit -->
-    <rule ref="Generic.Files.LineLength">
+    <!-- Disable PSR12's Generic.Files.LineLength (does not support ignoring use/import statements) -->
+    <rule ref="Generic.Files.LineLength.TooLong">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Generic.Files.LineLength.MaxExceeded">
+        <severity>0</severity>
+    </rule>
+    <!-- Use Slevomat's LineLength instead, which supports ignoreImports -->
+    <rule ref="SlevomatCodingStandard.Files.LineLength">
         <properties>
-            <property name="lineLimit" value="150"/>
-            <property name="absoluteLineLimit" value="0"/>
+            <property name="lineLengthLimit" value="150"/>
+            <property name="ignoreComments" value="false"/>
+            <property name="ignoreImports" value="true"/>
         </properties>
     </rule>
 
