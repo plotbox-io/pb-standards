@@ -118,10 +118,25 @@ final class FixPhpStyleCommand extends Command
 
     private function makeCsFixerShellCommand(string $resolvedTarget): string
     {
-        $configFile = $this->projectRoot . '/.php-cs-fixer.dist.php';
-        $configFlag = file_exists($configFile) ? ' --config=' . escapeshellarg($configFile) : '';
+        $configFile = $this->resolveConfigFile();
+        $configFlag = $configFile ? ' --config=' . escapeshellarg($configFile) : '';
 
         return 'php vendor/bin/php-cs-fixer fix' . $configFlag . ' ' . escapeshellarg($resolvedTarget);
+    }
+
+    private function resolveConfigFile(): ?string
+    {
+        $projectConfig = $this->projectRoot . '/.php-cs-fixer.dist.php';
+        if (file_exists($projectConfig)) {
+            return $projectConfig;
+        }
+
+        $bundledConfig = dirname(__DIR__, 2) . '/.php-cs-fixer.dist.php';
+        if (file_exists($bundledConfig)) {
+            return $bundledConfig;
+        }
+
+        return null;
     }
 
     private function makePhpcbfShellCommand(string $resolvedTarget): string
