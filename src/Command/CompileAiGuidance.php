@@ -15,10 +15,10 @@ use function Safe\mkdir;
 
 final class CompileAiGuidance extends Command
 {
-    private const string COMMAND_NAME = 'compile-ai-guidance';
+    private const COMMAND_NAME = 'compile-ai-guidance';
 
-    private const string CURSOR_RULES_FILE = '.cursor/rules/all.mdc';
-    private const string JUNIE_GUIDELINES_FILE = '.junie/guidelines.md';
+    private const CURSOR_RULES_FILE = '.cursor/rules/all.mdc';
+    private const JUNIE_GUIDELINES_FILE = '.junie/guidelines.md';
 
     /**
      * @param array<int, string> $modules

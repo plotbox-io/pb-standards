@@ -24,9 +24,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 final class PhpStyleCommand extends Command
 {
-    private const int NUM_THREADS = 6;
+    private const NUM_THREADS = 6;
 
-    private const array WHITELISTED_DIRECTORIES = [
+    private const WHITELISTED_DIRECTORIES = [
         'tests',
         'classes',
         'libraries/core/modules',
@@ -34,7 +34,7 @@ final class PhpStyleCommand extends Command
         'app'
     ];
 
-    private const string COMMAND_NAME = 'php-style';
+    private const COMMAND_NAME = 'php-style';
 
     private Git $git;
     private string $cwd;

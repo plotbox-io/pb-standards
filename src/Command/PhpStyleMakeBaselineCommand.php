@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 final class PhpStyleMakeBaselineCommand extends Command
 {
-    private const string COMMAND_NAME = 'php-style-baseline';
+    private const COMMAND_NAME = 'php-style-baseline';
 
     private string $appRoot;
 
