@@ -5,7 +5,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 ### Language Level
 - Use the latest PHP features available to the project runtime (e.g., PHP 8.2+/8.3+/8.4 where applicable).
 - Always declare strict types in new files: `declare(strict_types=1);` Be careful when adding to legacy files.
-- Prefer to use thecodingmachine/safe library functions for file system to replace problematic native PHP functions that can return false on failure.
+- Where a `thecodingmachine/safe` equivalent exists for a native PHP function, prefer it by adding `use function Safe\function_name;` and calling the function by its short name. This replaces the native version that silently returns false on failure with one that throws an exception.
 
 ### Types & Contracts
 - Use native type hints for all parameters and return types.
@@ -43,7 +43,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Classes should be final by default unless they are explicitly designed for inheritance.
 - Use private visibility for properties and methods by default. Only use protected visibility when necessary for inheritance.
 - Use traits sparingly and only when there is a very good reason to do so.
-- All PHP base functions and methods should have a corresponding 'use' statement at the top of the file.
+- Do not add `use function` imports for global PHP functions (e.g., `use function strlen;`). PHP's fallback resolution handles these automatically. The only function imports should be for namespaced functions such as `use function Safe\json_decode;`.
 - Class contents should be ordered as follows:
   - Trait uses
   - Constants

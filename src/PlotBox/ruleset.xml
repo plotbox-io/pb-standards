@@ -83,6 +83,8 @@
     <rule ref="PlotBox.Commenting.DisallowSingleTypedArray"/>
     <rule ref="PlotBox.Commenting.PhpDocInsideFunctionParams"/>
     <rule ref="PlotBox.TypeHints.ReturnVoid"/>
+    <rule ref="PlotBox.Functions.RequireSafeFunctions"/>
+    <rule ref="PlotBox.Namespaces.DisallowGlobalFunctionImport"/>
 
     <!-- Modified Squiz version to disallow trailing comma (instead of enforce it) -->
     <rule ref="PlotBox.Arrays.ArrayDeclaration"/>

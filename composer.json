@@ -8,6 +8,11 @@
       "PlotBox\\Standards\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "PlotBox\\Standards\\Tests\\": "tests/"
+    }
+  },
   "repositories": [
     {
       "type": "vcs",
@@ -44,5 +49,8 @@
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^13.0"
   }
 }
