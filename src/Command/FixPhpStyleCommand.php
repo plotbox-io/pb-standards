@@ -18,8 +18,9 @@ final class FixPhpStyleCommand extends Command
 
     private string $projectRoot;
 
-    public function __construct()
-    {
+    public function __construct(
+        private ?string $phpcsConfigPath = null
+    ) {
         parent::__construct(self::COMMAND_NAME);
         $this->projectRoot = getcwd();
     }
@@ -126,6 +127,10 @@ final class FixPhpStyleCommand extends Command
 
     private function makePhpcbfShellCommand(string $resolvedTarget): string
     {
+        $standard = $this->phpcsConfigPath
+            ? escapeshellarg($this->phpcsConfigPath)
+            : 'PlotBox';
+
         $errorMode = E_ERROR | E_PARSE;
 
         $exclusions = [
@@ -134,7 +139,7 @@ final class FixPhpStyleCommand extends Command
         ];
 
         return "php -d error_reporting=$errorMode vendor/bin/phpcbf"
-            . ' --standard=PlotBox'
+            . ' --standard=' . $standard
             . ' --exclude=' . implode(',', $exclusions)
             . ' ' . escapeshellarg($resolvedTarget);
     }

@@ -43,7 +43,8 @@ final class PhpStyleCommand extends Command
     public function __construct(
         private ?string $realAppRoot = null,
         private array $excludedDirectories = [],
-        private ?string $phpVersion = null
+        private ?string $phpVersion = null,
+        private ?string $phpcsConfigPath = null
     ) {
         parent::__construct(self::COMMAND_NAME);
         $this->cwd = getcwd();
@@ -223,13 +224,17 @@ final class PhpStyleCommand extends Command
 
         $pathsToScan = '--file-list=' . escapeshellarg($tempFileListPath);
 
+        $standard = $this->phpcsConfigPath
+            ? escapeshellarg($this->phpcsConfigPath)
+            : 'Plotbox';
+
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
         $phpcsCommand = "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
             --runtime-set testVersion $phpVersion \
             --extensions=php \
             --parallel=" . self::NUM_THREADS . " \
-            --standard=Plotbox \
+            --standard=$standard \
             --report=json \
             $pathsToScan | uniq";
 
