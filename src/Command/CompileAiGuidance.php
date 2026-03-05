@@ -7,6 +7,7 @@ namespace PlotBox\Standards\Command;
 use PlotBox\Standards\Util\Util;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function Safe\file_get_contents;
@@ -34,7 +35,13 @@ final class CompileAiGuidance extends Command
     {
         $this
             ->setName(self::COMMAND_NAME)
-            ->setDescription('Compiles AI guidance files for Cursor and Junie from source guidance files');
+            ->setDescription('Compiles AI guidance files for Cursor from source guidance files')
+            ->addOption(
+                'include-junie',
+                null,
+                InputOption::VALUE_NONE,
+                'Also generate .junie/guidelines.md (skipped by default)'
+            );
     }
 
     /** @inheritDoc */
@@ -51,7 +58,10 @@ final class CompileAiGuidance extends Command
         $combinedContent = $this->getCombinedContent($projectRoot);
 
         $this->writeCursorRules($projectRoot, $combinedContent, $output);
-        $this->writeJunieGuidelines($projectRoot, $combinedContent, $output);
+
+        if ($input->getOption('include-junie')) {
+            $this->writeJunieGuidelines($projectRoot, $combinedContent, $output);
+        }
 
         $output->writeln('<info>AI guidance files compiled successfully!</info>');
 
