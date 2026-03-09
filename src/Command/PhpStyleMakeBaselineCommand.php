@@ -23,7 +23,8 @@ final class PhpStyleMakeBaselineCommand extends Command
         private ?string $phpVersion = null
     ) {
         parent::__construct(self::COMMAND_NAME);
-        $this->appRoot = getcwd();
+        $envRoot = getenv('PB_PROJECT_ROOT');
+        $this->appRoot = is_string($envRoot) && $envRoot !== '' ? $envRoot : getcwd();
     }
 
     /** @inheritdoc */

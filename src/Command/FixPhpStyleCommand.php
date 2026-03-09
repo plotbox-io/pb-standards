@@ -22,7 +22,8 @@ final class FixPhpStyleCommand extends Command
         private ?string $phpcsConfigPath = null
     ) {
         parent::__construct(self::COMMAND_NAME);
-        $this->projectRoot = getcwd();
+        $envRoot = getenv('PB_PROJECT_ROOT');
+        $this->projectRoot = is_string($envRoot) && $envRoot !== '' ? $envRoot : getcwd();
     }
 
     /** @inheritdoc */

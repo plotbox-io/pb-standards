@@ -47,7 +47,8 @@ final class PhpStyleCommand extends Command
         private ?string $phpcsConfigPath = null
     ) {
         parent::__construct(self::COMMAND_NAME);
-        $this->cwd = getcwd();
+        $envRoot = getenv('PB_PROJECT_ROOT');
+        $this->cwd = is_string($envRoot) && $envRoot !== '' ? $envRoot : getcwd();
         $this->git = new Git($this->cwd);
     }
 
@@ -285,6 +286,7 @@ final class PhpStyleCommand extends Command
                 '/opt/project/',
                 '/app/',
                 $appRoot . '/',
+                $this->cwd . '/',
             ]);
         }
 
