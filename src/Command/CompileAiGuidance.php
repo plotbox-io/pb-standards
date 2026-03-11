@@ -25,7 +25,7 @@ final class CompileAiGuidance extends Command
      * @param array<int, string> $modules
      */
     public function __construct(
-        private readonly array $modules = ['GENERAL', 'PHP']
+        private readonly array $modules = ['GENERAL', 'PHP', 'JAVASCRIPT']
     ) {
         parent::__construct();
     }
