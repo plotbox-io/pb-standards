@@ -47,60 +47,9 @@ These rules cover Vue 3 with the Composition API. General principles live in `GE
 - Use `provide/inject` sparingly for cross‑cutting concerns (themes, i18n bindings), not arbitrary state.
 
 ### Testing
-
-#### Framework & Scope
-- Use Vitest for unit tests; test composables and pure functions in isolation.
 - Use Vue Test Utils for component tests; assert behaviour (rendered output/events), not internals.
-- Mock network and timers; make components deterministic in tests.
-- Only composable-level tests are supported. Vue template testing is not
-  supported due to mocking complexity. If logic needs testing, extract it into a
-  composable.
-
-#### File Layout
-- Test file mirrors the source path:
-  `src/composables/foo.js` → `src/tests/composables/foo.spec.js`
-- One test file per module; one `describe` block per exported function.
-
-#### Naming
-- `describe` block named after the function under test.
-- `it` / `test` uses `should_*` in `snake_case`
-  (e.g., `it('should_return_empty_array_when_input_is_null', ...)`).
-
-#### Test Body Structure
-- Test bodies should contain **only** flat `given_*`, `when_*`, `then_*` helper
-  calls — no inline setup, assertions, or control flow.
-- Helper functions live at **module scope** (after `describe` blocks), never
-  nested inside `describe` or `it`.
-- No `async/await` or `.then()` in test bodies; wrap async work inside helpers.
-
-#### State & Setup
-- Shared state via module-scoped `let` variables, reset in `beforeEach`.
-- Each test should be independent; do not rely on execution order.
-
-#### Example
-
-```js
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useFilters } from '@/composables/filters';
-
-let result;
-
-describe('applyDefaults', () => {
-    beforeEach(() => {
-        result = undefined;
-    });
-
-    it('should_use_empty_array_when_value_is_null', () => {
-        given_null_input();
-        when_defaults_applied();
-        then_result_is_empty_array();
-    });
-});
-
-function given_null_input() { /* setup */ }
-function when_defaults_applied() { result = useFilters().applyDefaults(null); }
-function then_result_is_empty_array() { expect(result).toEqual([]); }
-```
+- Extract testable logic into composables; test them with Vitest following the
+  conventions in `JAVASCRIPT.md`.
 
 ### Tooling
 - Use Vite for builds; enable ESLint/Prettier with Vue support and TypeScript where applicable.
