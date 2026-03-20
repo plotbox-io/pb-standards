@@ -109,6 +109,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
   - The SUT must be a property of the class and named as `$sut`.
   - The SUT must be constructed only in `setUp()` (using the dependency injection container ideally).
   - The SUT must not be re-constructed again after the initial `setUp()`.
+  - In rare cases where the SUT genuinely cannot be constructed normally (e.g. a legacy class with a complex inheritance chain or a broken parent constructor), it is acceptable as an absolute last resort to mock the SUT itself using `getMockBuilder()->disableOriginalConstructor()->getMock()` and inject its dependencies via reflection. This pattern should be avoided wherever possible — it is only a pragmatic escape hatch for otherwise-untestable legacy code.
 - Each test name should start with `should_`.
 - Each test should be comprised of only calls to `given_`, `when_`, or `then_` methods (with the exception of exception expectations).
 - `setUp()` and similar PHPUnit overridden methods should always be first before other methods.
