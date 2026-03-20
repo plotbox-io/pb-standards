@@ -19,6 +19,7 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 
 ### Object Design
 - Prefer composition over inheritance. Make classes `final` by default unless designed for extension.
+- When a class implements an interface, all non-test code must type-hint against the interface, not the concrete class. This applies to constructor parameters, method parameters, property types, and return types.
 - Use constructor injection for dependencies. Avoid service locators and globals.
 - Avoid static methods for behaviour; acceptable exceptions: named constructors, pure factories, constants, and stateless helpers.
 - Keep properties and methods `private` by default; use `protected` only when there is a concrete inheritance need.
@@ -63,10 +64,12 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - For chained method call following a new object creation, prefer to not surround with outer parentheses.
     - e.g. `$obj = new ClassName()->method();` instead of `$obj = (new ClassName())->method();`
 - Do not add a trailing comma after the last item in an array or argument list or function call argument list.
+- Explicit type casts (e.g. `(int)`) are only necessary in `declare(strict_types=1)` files when the source value may genuinely not match the target type (e.g. array values from request data, `stdClass` properties from database results). In non-strict files, PHP handles coercion automatically. Do not blanket-apply casts for "consistency" — apply them only where there is a real type mismatch risk.
 
 ### Errors & Exceptions
 - Throw domain‑specific exceptions with clear messages; include actionable context but no sensitive data.
 - Don’t use return codes for error handling. Avoid suppressing exceptions.
+- Do not add `@throws` tags for `LogicException`, `RuntimeException`, or `InvalidArgumentException`. These represent guard-clause exceptions for unexpected program state (bugs in calling code), not expected failure modes a caller should handle. Documenting them implies they are part of the method’s contract and should be caught, which is the opposite of their intent. Only document domain-specific exceptions that callers may legitimately need to catch (e.g. `RecordNotFoundException`).
 
 ### Functions & Methods
 - Keep functions small; single responsibility.
@@ -85,11 +88,23 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Prefer self‑documenting code. Use comments for why, not what.
 - In classes implementing interfaces or extending abstract classes, use `@inheritDoc` on overridden methods instead of duplicating descriptions.
 
+### Repository Design
+
+- Repository methods should return **models** (or collections of models), not primitive IDs or booleans derived from business rules.
+- **Do not encode business logic in repository methods.** Filtering by domain status (e.g. "non-cancelled"), determining privacy, or selecting "the most recent" record are business rules that belong in the calling handler or service — not the repository.
+- **Avoid general `findByX` methods.** Each method should have a specific, descriptive name that reflects a meaningful domain relationship (e.g. `findOrdersForCustomer`, `findEventsForDiary`) rather than a generic foreign-key lookup.
+- **Avoid use-case-specific query methods.** Methods tightly scoped to a single consumer (e.g. `getWebsiteEventIdsForDiary`) couple the repository to that consumer. Instead, return models and let the consumer apply its own filtering.
+
+### Static Analysis
+
+- When resolving static analysis violations, prefer giving the analyser more type information via `@var`, `@param`, or `@return` annotations rather than using suppression annotations (e.g. `@psalm-suppress`). When using `@var`, place it where the value is first instantiated or retrieved, not just above the line where the violation is reported.
+
 ### Testing & Tooling
 - Design for testability: isolate I/O behind interfaces; pass time/clock, filesystem, and external clients as dependencies.
 - Focus unit testing primarily on (use-case) handlers.
 - Prefer fakes over mocks in unit tests (i.e., make fake implementations of interfaces rather than mocking them).
 - Use PHPUnit for unit tests.
+- Test files should mirror the source directory structure (e.g., a test for `src/Domain/Foo.php` lives at `tests/Domain/FooTest.php`).
 - Each test class should focus on a single SUT (class under test).
   - The SUT must be a property of the class and named as `$sut`.
   - The SUT must be constructed only in `setUp()` (using the dependency injection container ideally).
