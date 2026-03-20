@@ -102,9 +102,9 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Use `@inheritDoc` method annotation above overridden methods from base test class.
 - Always use `given_` rather than continuation methods like `and_`.
 - `given_` methods should contain groups of related setup code that can be summarized with a business-readable name.
-- In less common cases, we can allow arguments to be passed to `given_` methods if it significantly improves readability, but it should be avoided when possible.
+- In less common cases, we can allow arguments to be passed to `given_` or `then_` methods if it significantly improves readability, but it should be avoided when possible.
 - All main methods (test, givens, whens, thens) should use plain business language and avoid technical terms (e.g., `should_create_user` rather than `should_invoke_create_method_on_user_repository`).
-- All main methods (test, givens, whens, thens) should return `void` and not have any parameters (except where arguments for `given_` methods significantly improve readability). Prefer using class properties to share state between them.
+- All main methods (test, givens, whens, thens) should return `void` and not have any parameters (except where arguments for `given_` or `then_` methods significantly improve readability). Prefer using class properties to share state between them.
 - Within the `given`, `when`, and `then` methods, other utility/technical methods can be used to keep the code DRY. These can be in `camelCase` and can use more technical terms.
 - Sometimes `given` statements may be implicit (i.e., the default set up state already has the necessary preconditions). In this case, it is acceptable to omit the `given` statement (or use a single-line comment to indicate the implicit `given`).
 - Do not use technical terms in the main test method names or given/when/then methods. Use business language only.
