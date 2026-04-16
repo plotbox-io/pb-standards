@@ -16,6 +16,26 @@ These rules cover pure PHP. Framework‑specific guidance is in the Laravel and 
 - Prefer to strongly type variables via method input/output rather than `@var` annotations where possible.
 - DO NOT use legacy/ambiguous iterable types like int[], string[], etc. as they do not convey the intended structure (list vs map) or type safety.
 - DO NOT add annotations like /** @var list<string> */ above constant arrays. This is redundant and adds unnecessary noise.
+- Prefer an explicit DTO class over an array shape once the shape reaches 3 or more properties. At exactly 3, use judgement based on context — if the shape represents a coherent concept or appears in a signature, a DTO is still preferred. At 4 or more, a DTO is strongly preferred with no exceptions. This applies regardless of scope (local variables, arguments, or return types). A named DTO is terser at call sites, conveys intent through its name, and keeps signatures readable.
+
+```php
+// ❌ BAD – array shape with 4+ properties is unwieldy and loses meaning
+/** @param array{id: int, name: string, email: string, role: string} $data */
+public function createUser(array $data): void { ... }
+
+// ✅ GOOD – a named DTO is self-documenting and easier to type-hint
+public function createUser(NewUserData $data): void { ... }
+
+final readonly class NewUserData
+{
+    public function __construct(
+        public int $id,
+        public string $name,
+        public string $email,
+        public string $role,
+    ) {}
+}
+```
 
 ### Object Design
 - Prefer composition over inheritance. Make classes `final` by default unless designed for extension.
