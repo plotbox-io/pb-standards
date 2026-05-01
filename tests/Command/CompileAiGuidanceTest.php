@@ -155,6 +155,35 @@ final class CompileAiGuidanceTest extends TestCase
     }
 
     #[Test]
+    public function should_strip_preamble_html_comment_blocks(): void
+    {
+        $input = <<<'MD'
+            <!--
+            EDITOR NOTE: this is a multi-line comment about how to use this file.
+            It should NOT appear in any compiled rule file.
+            -->
+
+            <!-- a single-line preamble comment to also strip -->
+
+            <!-- target: php -->
+            ## PHP Section
+            real php content
+            MD;
+
+        $sections = CompileAiGuidance::parseRepoGuidance($input);
+
+        self::assertArrayHasKey('php', $sections);
+        self::assertStringContainsString('## PHP Section', $sections['php']);
+        self::assertStringContainsString('real php content', $sections['php']);
+
+        self::assertArrayNotHasKey('repo-overview', $sections);
+        foreach ($sections as $body) {
+            self::assertStringNotContainsString('EDITOR NOTE', $body);
+            self::assertStringNotContainsString('single-line preamble comment', $body);
+        }
+    }
+
+    #[Test]
     public function should_resolve_short_aliases_in_markers(): void
     {
         $input = <<<'MD'

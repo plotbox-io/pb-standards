@@ -278,7 +278,28 @@ final class CompileAiGuidance extends Command
             return [];
         }
 
+        $inPreambleHtmlComment = false;
+
         foreach ($lines as $line) {
+            // Strip preamble HTML comment blocks (editor-only docs, not part of guidance).
+            // Only applies before the first ## heading; non-target HTML comments inside
+            // sections are preserved as-is.
+            if ($pendingHeading === null) {
+                if ($inPreambleHtmlComment) {
+                    if (str_contains($line, '-->')) {
+                        $inPreambleHtmlComment = false;
+                    }
+                    continue;
+                }
+                if (preg_match('/^\s*<!--/', $line) === 1
+                    && preg_match('/^\s*<!--\s*target:/', $line) !== 1) {
+                    if (!str_contains($line, '-->')) {
+                        $inPreambleHtmlComment = true;
+                    }
+                    continue;
+                }
+            }
+
             // Marker comment: capture target for the next ## heading.
             if (preg_match('/^\s*<!--\s*target:\s*(\S+)\s*-->\s*$/', $line, $matches) === 1) {
                 $pendingTarget = self::TARGET_ALIASES[$matches[1]] ?? $matches[1];
