@@ -92,10 +92,18 @@ final class CompileAiGuidance extends Command
      * @param bool $splitOutputs When true, emit one Cursor rule file per target
      *                           (recommended). When false, only the legacy
      *                           all.mdc is generated.
+     * @param bool $generateLegacyAllMdc When true (default for back-compat),
+     *                                   also emit the combined all.mdc file.
+     *                                   Consumers that have migrated away from
+     *                                   it (i.e. tools no longer rely on the
+     *                                   single bundle) can opt out by passing
+     *                                   false. Ignored in non-split mode (the
+     *                                   bundle is the only output there).
      */
     public function __construct(
         private readonly array $modules = ['GENERAL', 'PHP', 'JAVASCRIPT'],
         private readonly bool $splitOutputs = false,
+        private readonly bool $generateLegacyAllMdc = true,
     ) {
         parent::__construct();
     }
@@ -128,7 +136,13 @@ final class CompileAiGuidance extends Command
             $this->writeSplitOutputs($projectRoot, $repoGuidance, $vendorContents, $output);
         }
 
-        $this->writeLegacyAllMdc($projectRoot, $repoGuidance, $vendorContents, $output);
+        // Always emit all.mdc in non-split mode (it's the only output there).
+        // In split mode it's optional back-compat; consumers can opt out.
+        if (!$this->splitOutputs || $this->generateLegacyAllMdc) {
+            $this->writeLegacyAllMdc($projectRoot, $repoGuidance, $vendorContents, $output);
+        } else {
+            $this->deleteLegacyAllMdcIfPresent($projectRoot, $output);
+        }
 
         $output->writeln('<info>AI guidance files compiled successfully!</info>');
 
@@ -339,6 +353,15 @@ final class CompileAiGuidance extends Command
         $flush();
 
         return $sections;
+    }
+
+    private function deleteLegacyAllMdcIfPresent(string $projectRoot, OutputInterface $output): void
+    {
+        $path = $projectRoot . '/' . self::LEGACY_ALL_FILE;
+        if (file_exists($path)) {
+            unlink($path);
+            $output->writeln("<comment>Removed $path (legacy all.mdc disabled)</comment>");
+        }
     }
 
     private function ensureDir(string $directory): void
