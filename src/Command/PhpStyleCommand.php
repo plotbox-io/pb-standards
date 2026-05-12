@@ -89,11 +89,13 @@ final class PhpStyleCommand extends Command
         }
 
         $tempFileList = $this->createTempFileList($filesToCheck);
+        $phpVersion = $this->resolvePhpVersion();
+        $tempRuleset = $this->maybeWriteVersionAdaptedRuleset($phpVersion);
 
         try {
             $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->cwd . '/phpcs.baseline';
             $ignoreBaseline = (bool) $input->getOption('ignore-baseline');
-            $shellCommand = $this->getShellCommand($tempFileList, $sarbBaselinePath, $ignoreBaseline);
+            $shellCommand = $this->getShellCommand($tempFileList, $sarbBaselinePath, $ignoreBaseline, $phpVersion, $tempRuleset);
 
             $result = Shell::exec($shellCommand);
 
@@ -115,6 +117,9 @@ final class PhpStyleCommand extends Command
             return self::FAILURE;
         } finally {
             @unlink($tempFileList);
+            if ($tempRuleset !== null) {
+                @unlink($tempRuleset);
+            }
         }
     }
 
@@ -212,22 +217,56 @@ final class PhpStyleCommand extends Command
         return $existingDirs;
     }
 
+    private function resolvePhpVersion(): string
+    {
+        return $this->phpVersion ?? (PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION);
+    }
+
+    /**
+     * When the target PHP version is below 8.3, typed class constants are not valid syntax.
+     * The PlotBox ruleset enables ClassConstantTypeHint.MissingNativeTypeHint unconditionally,
+     * but Slevomat does not respect phpcs's testVersion runtime setting for this sniff.
+     * We generate a temporary wrapper ruleset that disables the native type hint enforcement
+     * so that the style check correctly reflects what is valid for the target PHP version.
+     */
+    private function maybeWriteVersionAdaptedRuleset(string $phpVersion): ?string
+    {
+        if (version_compare($phpVersion, '8.3', '>=')) {
+            return null;
+        }
+
+        $baseStandard = $this->phpcsConfigPath ?? 'PlotBox';
+
+        $xml = <<<XML
+            <?xml version="1.0"?>
+            <ruleset name="PlotBoxVersionAdapted">
+                <rule ref="{$baseStandard}"/>
+                <rule ref="SlevomatCodingStandard.TypeHints.ClassConstantTypeHint">
+                    <properties>
+                        <property name="enableNativeTypeHint" value="false"/>
+                    </properties>
+                </rule>
+            </ruleset>
+            XML;
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'phpcs_ruleset_') . '.xml';
+        file_put_contents($tempPath, $xml);
+
+        return $tempPath;
+    }
+
     private function getShellCommand(
         string $tempFileListPath,
         string $sarbBaselinePath,
-        bool $ignoreBaseline = false
+        bool $ignoreBaseline,
+        string $phpVersion,
+        ?string $tempRuleset
     ): string {
-        if ($this->phpVersion) {
-            $phpVersion = $this->phpVersion;
-        } else {
-            $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
-        }
-
         $pathsToScan = '--file-list=' . escapeshellarg($tempFileListPath);
 
-        $standard = $this->phpcsConfigPath
-            ? escapeshellarg($this->phpcsConfigPath)
-            : 'Plotbox';
+        $standard = $tempRuleset
+            ? escapeshellarg($tempRuleset)
+            : ($this->phpcsConfigPath ? escapeshellarg($this->phpcsConfigPath) : 'PlotBox');
 
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
