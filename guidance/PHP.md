@@ -1,152 +1,98 @@
 ## PHP Coding Standards and Best Practices
 
-These rules cover pure PHP. Framework‑specific guidance is in the Laravel and Symfony documents.
+Rules cover pure PHP. Framework-specific guidance is in the Laravel and Symfony documents.
 
 ### Language Level
-- Use the latest PHP features available to the project runtime (e.g., PHP 8.2+/8.3+/8.4 where applicable).
-- Always declare strict types in new files: `declare(strict_types=1);` Be careful when adding to legacy files.
-- Where a `thecodingmachine/safe` equivalent exists for a native PHP function, prefer it by adding `use function Safe\function_name;` and calling the function by its short name. This replaces the native version that silently returns false on failure with one that throws an exception.
+- Use the latest PHP features for the project runtime.
+- Always `declare(strict_types=1)` in new files; be cautious when adding to legacy files.
+- Prefer `thecodingmachine/safe` equivalents over native functions that silently return false on failure.
 
 ### Types & Contracts
 - Use native type hints for all parameters and return types.
-- Prefer the form `?string` over `string|null` for simple nullable types.
-- Use `self`/`static` return types for fluent APIs or builders as appropriate.
-- Prefer value objects and enums over string/int primitives when they represent a domain concept.
-- For iterables/arrays, document generics with PHPDoc (e.g., `array<int, User>`, `list<Order>`), and validate contents where critical.
-- Prefer to strongly type variables via method input/output rather than `@var` annotations where possible.
-- DO NOT use legacy/ambiguous iterable types like int[], string[], etc. as they do not convey the intended structure (list vs map) or type safety.
-- DO NOT add annotations like /** @var list<string> */ above constant arrays. This is redundant and adds unnecessary noise.
-- Prefer an explicit DTO class over an array shape once the shape reaches 3 or more properties. At exactly 3, use judgement based on context — if the shape represents a coherent concept or appears in a signature, a DTO is still preferred. At 4 or more, a DTO is strongly preferred with no exceptions. This applies regardless of scope (local variables, arguments, or return types). A named DTO is terser at call sites, conveys intent through its name, and keeps signatures readable.
-
-```php
-// ❌ BAD – array shape with 4+ properties is unwieldy and loses meaning
-/** @param array{id: int, name: string, email: string, role: string} $data */
-public function createUser(array $data): void { ... }
-
-// ✅ GOOD – a named DTO is self-documenting and easier to type-hint
-public function createUser(NewUserData $data): void { ... }
-
-final readonly class NewUserData
-{
-    public function __construct(
-        public int $id,
-        public string $name,
-        public string $email,
-        public string $role,
-    ) {}
-}
-```
+- Prefer `?string` over `string|null` for simple nullable types.
+- Use `self`/`static` return types for fluent APIs or builders.
+- Prefer value objects and enums over string/int primitives when representing a domain concept.
+- Document array/iterable generics with PHPDoc (e.g. `array<int, User>`, `list<Order>`).
+- Do not use legacy iterable types like `int[]`, `string[]` — they don't convey structure or type safety.
+- Do not add `/** @var list<string> */` above constant arrays — redundant noise.
+- Prefer a DTO over an array shape at 3+ properties; at 4+ a DTO is required.
 
 ### Object Design
-- Prefer composition over inheritance. Make classes `final` by default unless designed for extension.
-- When a class implements an interface, all non-test code must type-hint against the interface, not the concrete class. This applies to constructor parameters, method parameters, property types, and return types.
-- Use constructor injection for dependencies. Avoid service locators and globals.
-- Avoid static methods for behaviour; acceptable exceptions: named constructors, pure factories, constants, and stateless helpers.
-- Keep properties and methods `private` by default; use `protected` only when there is a concrete inheritance need.
-- Use traits sparingly; favour small dedicated classes.
-- DTOs may be `readonly` (class‑level) where appropriate; avoid sprinkling `readonly` on many individual properties.
+- Prefer composition over inheritance. Classes are `final` by default.
+- Type-hint against interfaces, not concrete classes — constructor params, method params, properties, and return types.
+- Use constructor injection. Avoid service locators and globals.
+- Avoid static methods for behaviour; exceptions: named constructors, pure factories, constants, stateless helpers.
+- Properties and methods are `private` by default; `protected` only when there is a concrete inheritance need.
+- Avoid traits; favour small dedicated classes.
+- DTOs may be `readonly` at the class level; avoid per-property `readonly`.
 
 ### Code Style
-- FQCNs should be avoided in code. Use 'use' statements instead.
-- Use native type hints and return types on all methods and functions.
-- Use self or static return types on methods that return the current class instance (e.g., fluent setters, builders, etc.).
-- Iterable types and arrays should be strongly typed with phpdoc generics where possible (e.g. array<int, User>, iterable<User>, list<User>).
-- Always use strict types on new code files (declare(strict_types=1);). Be cautious when adding strict types to existing files.
-- Code comments should only be used where the code is not self-explanatory. Prefer clear code over comments.
-- Use strict comparisons (===, !==) unless there is a very good reason not to.
-- Use single quotes for strings unless you need to use double quotes (e.g. for interpolation).
-- Use short array syntax ([]).
-- Use type-safe functions (e.g. in_array() with strict parameter set to true).
-- Never use the `empty()` function to check for null values. Prefer truthy/falsey checks for terseness, `isset()`, or strict comparison operators.
-- Use @inheritDoc in child classes or interface implementations for implemented or overridden methods (rather than repeating the PHPDoc description).
-- PHPdocs with a single tag should be on a single line (e.g., `/** @return int */`).
-- Use dependency injection via constructor injection for service dependencies.
-- Classes should be final by default unless they are explicitly designed for inheritance.
-- Use private visibility for properties and methods by default. Only use protected visibility when necessary for inheritance.
-- Use traits sparingly and only when there is a very good reason to do so.
-- Do not add `use function` imports for global PHP functions (e.g., `use function strlen;`). PHP's fallback resolution handles these automatically. The only function imports should be for namespaced functions such as `use function Safe\json_decode;`.
-- Class contents should be ordered as follows:
-  - Trait uses
-  - Constants
-  - Properties
-  - Constructor
-  - Public methods
-  - Protected methods
-  - Private methods
-- Constants should be defined in UPPER_SNAKE_CASE and grouped together near the top of the class with no blank lines between them.
-- There should be a space between these groupings but no blank lines within a grouping.
-- There should be a single newline between methods (without any other whitespace).
-- Avoid using the readonly property modifier in general except where it is very beneficial (e.g., for simple DTOs), and in those cases only on the class level rather than individual properties. The extra noise is not usually worth the minor benefits.
+- Use `use` statements; avoid FQCNs inline.
+- Strict comparisons (`===`, `!==`).
+- Single quotes unless interpolation requires double quotes.
+- Short array syntax `[]`; no trailing comma after the last item.
+- Use type-safe function variants (e.g. `in_array($v, $arr, true)`).
+- Never use `empty()` for null checks; prefer `isset()` or strict comparison.
+- Use `@inheritDoc` on overridden methods rather than duplicating the description.
+- Single-tag PHPdocs on one line: `/** @return int */`.
+- Do not import global PHP functions with `use function`; only namespaced functions (e.g. `use function Safe\json_decode`).
+- Class member order: trait uses → constants → properties → constructor → public → protected → private.
+- Constants: `UPPER_SNAKE_CASE`, grouped with no blank lines between them; one blank line separating groups from other members.
+- One blank line between methods; no additional whitespace.
 - Use constructor property promotion for DTOs.
-- Use named arguments when instantiating DTOs with many parameters for clarity.
-- When referring to repositories as dependencies, their variable name should be like `$somethingRepository` (e.g., 'CustomerRepository' would be `$customerRepository`).
-    - Some long-winded repository names can be shortened for brevity (e.g., 'TemporaryCustomerCredentialRepository' could be `$credentialRepository`).
-- For chained method call following a new object creation, prefer to not surround with outer parentheses.
-    - e.g. `$obj = new ClassName()->method();` instead of `$obj = (new ClassName())->method();`
-- Do not add a trailing comma after the last item in an array or argument list or function call argument list.
-- Explicit type casts (e.g. `(int)`) are only necessary in `declare(strict_types=1)` files when the source value may genuinely not match the target type (e.g. array values from request data, `stdClass` properties from database results). In non-strict files, PHP handles coercion automatically. Do not blanket-apply casts for "consistency" — apply them only where there is a real type mismatch risk.
+- Use named arguments when instantiating DTOs with many parameters.
+- Repository dependencies named `$thingRepository` (e.g. `$customerRepository`); long names can be shortened sensibly.
+- Chained calls on new objects: `$obj = new Foo()->method()` not `$obj = (new Foo())->method()`.
+- Explicit casts (e.g. `(int)`) are appropriate when the source value may not match the target type (e.g. request data, DB results). Do not blanket-apply casts for consistency.
 
 ### Errors & Exceptions
-- Throw domain‑specific exceptions with clear messages; include actionable context but no sensitive data.
-- Don’t use return codes for error handling. Avoid suppressing exceptions.
-- Do not add `@throws` tags for `LogicException`, `RuntimeException`, or `InvalidArgumentException`. These represent guard-clause exceptions for unexpected program state (bugs in calling code), not expected failure modes a caller should handle. Documenting them implies they are part of the method’s contract and should be caught, which is the opposite of their intent. Only document domain-specific exceptions that callers may legitimately need to catch (e.g. `RecordNotFoundException`).
+- Throw domain-specific exceptions with clear, actionable messages; no sensitive data.
+- No return codes for errors; do not suppress exceptions.
+- Do not add `@throws` for `LogicException`, `RuntimeException`, or `InvalidArgumentException` — these are guard-clause exceptions, not contract exceptions. Only document domain-specific exceptions callers may legitimately catch (e.g. `RecordNotFoundException`).
 
-### Functions & Methods
-- Keep functions small; single responsibility.
-- Method signatures should be split across multiple lines when they exceed 100 characters in length.
-- Use strict comparisons (`===`, `!==`).
-- Use short array syntax `[]`; do not add a trailing comma after the last item in an array or argument list or function call argument list.
-- Use single quotes for strings unless interpolation is required.
-- Prefer type‑safe library calls (e.g., `in_array($needle, $haystack, true)`).
-
-### Naming & Imports
-- Avoid abbreviations in identifiers except well‑known ones (`$id`, `$url`, `$html`, loop index `$i`, `$sut` in tests). For example, prefer `$adminCredentials` over `$adminCreds`.
-- Avoid FQCNs inline; import with `use` statements.
-- Repositories injected as dependencies should be named `$thingRepository` (e.g., `$customerRepository`); very long names can be shortened thoughtfully (e.g., `$credentialRepository`).
+### Naming
+- No abbreviations except well-known ones (`$id`, `$url`, `$html`, `$i`, `$sut`).
+- Avoid FQCNs inline; use `use` statements.
 
 ### Documentation
-- Prefer self‑documenting code. Use comments for why, not what.
-- In classes implementing interfaces or extending abstract classes, use `@inheritDoc` on overridden methods instead of duplicating descriptions.
+- Comments explain *why*, not *what*. Prefer self-explanatory code.
+- Use `@inheritDoc` on overridden or implemented methods.
 
 ### Repository Design
-
-- Repository methods should return **models** (or collections of models), not primitive IDs or booleans derived from business rules.
-- **Do not encode business logic in repository methods.** Filtering by domain status (e.g. "non-cancelled"), determining privacy, or selecting "the most recent" record are business rules that belong in the calling handler or service — not the repository.
-- **Avoid general `findByX` methods.** Each method should have a specific, descriptive name that reflects a meaningful domain relationship (e.g. `findOrdersForCustomer`, `findEventsForDiary`) rather than a generic foreign-key lookup.
-- **Avoid use-case-specific query methods.** Methods tightly scoped to a single consumer (e.g. `getWebsiteEventIdsForDiary`) couple the repository to that consumer. Instead, return models and let the consumer apply its own filtering.
+- Return models (or collections), not primitive IDs or booleans.
+- No business logic in repositories — filtering by status, determining privacy, selecting "most recent" belong in handlers/services.
+- Use specific, domain-meaningful method names (e.g. `findOrdersForCustomer`), not generic `findByX`.
+- Avoid use-case-specific query methods that couple the repository to a single consumer.
 
 ### Static Analysis
-
-- When resolving static analysis violations, prefer giving the analyser more type information via `@var`, `@param`, or `@return` annotations rather than using suppression annotations (e.g. `@psalm-suppress`). When using `@var`, place it where the value is first instantiated or retrieved, not just above the line where the violation is reported.
+- Prefer `@var`, `@param`, or `@return` annotations over `@psalm-suppress` when resolving violations.
+- Place `@var` where the value is first assigned, not above the violation line.
 
 ### Testing & Tooling
-- Design for testability: isolate I/O behind interfaces; pass time/clock, filesystem, and external clients as dependencies.
-- Focus unit testing primarily on (use-case) handlers.
-- Prefer fakes over mocks in unit tests (i.e., make fake implementations of interfaces rather than mocking them).
-- Use PHPUnit for unit tests.
-- Test files should mirror the source directory structure (e.g., a test for `src/Domain/Foo.php` lives at `tests/Domain/FooTest.php`).
-- Each test class should focus on a single SUT (class under test).
-  - The SUT must be a property of the class and named as `$sut`.
-  - The SUT must be constructed only in `setUp()` (using the dependency injection container ideally).
-  - The SUT must not be re-constructed again after the initial `setUp()`.
-  - In rare cases where the SUT genuinely cannot be constructed normally (e.g. a legacy class with a complex inheritance chain or a broken parent constructor), it is acceptable as an absolute last resort to mock the SUT itself using `getMockBuilder()->disableOriginalConstructor()->getMock()` and inject its dependencies via reflection. This pattern should be avoided wherever possible — it is only a pragmatic escape hatch for otherwise-untestable legacy code.
-- Each test name should start with `should_`.
-- Each test should be comprised of only calls to `given_`, `when_`, or `then_` methods (with the exception of exception expectations).
-- `setUp()` and similar PHPUnit overridden methods should always be first before other methods.
-- Helper methods should be private and placed after public test methods. However, PHPUnit 'data provider' helper methods must be public.
-- When defining model IDs in tests, use arbitrary but differing numbers, starting at 1000 to avoid collisions with real data (e.g. 1000, 1001, 1002 etc).
-- Use `@inheritDoc` method annotation above overridden methods from base test class.
-- Always use `given_` rather than continuation methods like `and_`.
-- `given_` methods should contain groups of related setup code that can be summarized with a business-readable name.
-- In less common cases, we can allow arguments to be passed to `given_` or `then_` methods if it significantly improves readability, but it should be avoided when possible.
-- All main methods (test, givens, whens, thens) should use plain business language and avoid technical terms (e.g., `should_create_user` rather than `should_invoke_create_method_on_user_repository`).
-- All main methods (test, givens, whens, thens) should return `void` and not have any parameters (except where arguments for `given_` or `then_` methods significantly improve readability). Prefer using class properties to share state between them.
-- Within the `given`, `when`, and `then` methods, other utility/technical methods can be used to keep the code DRY. These can be in `camelCase` and can use more technical terms.
-- Sometimes `given` statements may be implicit (i.e., the default set up state already has the necessary preconditions). In this case, it is acceptable to omit the `given` statement (or use a single-line comment to indicate the implicit `given`).
-- Do not use technical terms in the main test method names or given/when/then methods. Use business language only.
-  - For example, instead of `when_i_invoke_the_command`, use `when_i_create_a_new_user` (or something similar that reflects the business action being tested).
-  - Same applies to `given` and `then` methods.
-  - If doing some generic test setup, you can say 'given_i_am_creating_a_user' rather than 'given_i_construct_a_new_user_command' or similar.
-- If certain `given` statements are common across multiple tests, consider moving them to the test class `setUp()` method to reduce duplication.
-- If a given is implicit but also important to the understanding of the test, it is acceptable to include it as a single-line comment in the test method.
-- Use `should_` prefix for test methods.
+- Isolate I/O behind interfaces; inject time/clock, filesystem, and external clients as dependencies.
+- Unit tests focus on use-case handlers.
+- Prefer fakes over mocks; mock only your own interfaces.
+- Test files mirror source structure (e.g. `src/Foo/Bar.php` → `tests/Foo/BarTest.php`).
+- One SUT per test class, named `$sut`, constructed only in `setUp()`. Do not reconstruct after `setUp()`.
+- Test method names start with `should_`.
+- Test bodies contain only calls to `given_`, `when_`, or `then_` methods (except exception expectations).
+- `setUp()` and PHPUnit lifecycle methods come before all other methods.
+- Data provider methods are public; all other helpers are private and placed after public test methods.
+- Model IDs in tests start at 1000 (e.g. 1000, 1001) to avoid collisions with real data.
+- Use `@inheritDoc` on overridden base test class methods.
+- Use `given_` not continuation methods like `and_`.
+- `given_` methods group related setup code under a business-readable name.
+- Arguments on `given_` or `then_` methods are permitted when they significantly improve readability; avoid on `when_` methods.
+- All test method names and helper names use business language (e.g. `should_send_reminder` not `should_invoke_send_method`).
+- All test methods and helpers return `void` with no parameters (except `given_`/`then_` readability exceptions above).
+- Internal technical helpers within `given_`/`when_`/`then_` methods may use `camelCase`.
+- Implicit `given` preconditions may be omitted or noted with a comment.
+- Move `given_` setup common to multiple tests into `setUp()`.
+
+### Reviewer Calibration
+Common misapplications to avoid when reviewing PHP code:
+
+- **Explicit casts**: Only flag a missing cast when the source value may not match the target type (e.g. request or DB data). Do not flag casts on already-typed values.
+- **`@throws` for guard exceptions**: Never request `@throws LogicException`, `@throws RuntimeException`, or `@throws InvalidArgumentException`. Only flag missing `@throws` for domain exceptions callers may legitimately catch.
+- **`@param`/`@return` for simple native types**: Do not suggest adding these when they would only repeat a native type hint already in the signature. Only suggest PHPDoc that adds generics (e.g. `list<User>`) or documents domain exceptions.
+- **`given_`/`then_` method parameters**: Do not flag parameters on `given_` or `then_` helpers. They are explicitly permitted when they improve readability.
