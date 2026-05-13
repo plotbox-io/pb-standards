@@ -57,6 +57,7 @@ final class CompileAiGuidance extends Command
         'PHP'        => 'php',
         'JAVASCRIPT' => 'javascript',
         'VITEST'     => 'javascript',
+        'TYPESCRIPT' => 'javascript',
         'VUE'        => 'vue',
         'SYMFONY'    => 'php',
         'LARAVEL'    => 'php',
