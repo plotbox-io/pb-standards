@@ -33,6 +33,11 @@ Rules cover pure PHP. Framework-specific guidance is in the Laravel and Symfony 
 - Short array syntax `[]`; no trailing comma after the last item.
 - Use type-safe function variants (e.g. `in_array($v, $arr, true)`).
 - Never use `empty()` for null checks; prefer `isset()` or strict comparison.
+- Truthy/falsy checks (`if ($value)`, `if (!$value)`) are acceptable and often
+  preferred when `null`, `false`, `""`, and `0` should all be treated identically.
+  Do not flag these as requiring strict comparison — that would be a misapplication
+  of the strict equality rule. Only use `===`/`!==` when the distinction between
+  falsy values matters.
 - Use `@inheritDoc` on overridden methods rather than duplicating the description.
 - Single-tag PHPdocs on one line: `/** @return int */`.
 - Do not import global PHP functions with `use function`; only namespaced functions (e.g. `use function Safe\json_decode`).
