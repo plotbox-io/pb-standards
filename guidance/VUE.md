@@ -42,12 +42,21 @@
 - Use `provide/inject` only for cross-cutting concerns (themes, i18n), not arbitrary state.
 
 ### Testing
-- Assert behaviour (rendered output/events), not internals.
-- Extract testable logic into composables; test with Vitest following `JAVASCRIPT.md`.
+- Vue component templates are **not** unit tested directly. Do not suggest or write
+  Vitest tests that mount or render `.vue` files.
+- Extract testable logic (multiple branches, reused behaviour) into composables or utility
+  modules, then test those with Vitest. See `VITEST.md` for full conventions.
+- A single `v-if`, a lone watcher, or a mount-time fetch does not warrant extraction.
 
 ### Tooling
 - Vite for builds; ESLint/Prettier with Vue and TypeScript support.
 - Keep CI fast: type checks, lint, and tests on changed modules.
 
 ### Reviewer Calibration
-- **Composable extraction**: Only suggest extracting component logic into a composable when the logic contains multiple branches or is reused across components. Do not suggest extraction for single guards, lone watchers, or mount-time fetches in narrowly-scoped bugfix PRs.
+- **Composable extraction**: Only suggest extracting component logic into a composable
+  when the logic contains multiple branches or is reused across components. Do not suggest
+  extraction for single guards, lone watchers, or mount-time fetches in narrowly-scoped
+  bugfix PRs.
+- **Coverage comments on Vue files**: Do not raise a coverage comment against a `.vue`
+  file itself. If the component contains testable logic, suggest extraction to a
+  composable and note that the composable can then be covered by Vitest.

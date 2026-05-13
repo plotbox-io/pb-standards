@@ -56,6 +56,7 @@ final class CompileAiGuidance extends Command
         'GENERAL'    => 'code-principles',
         'PHP'        => 'php',
         'JAVASCRIPT' => 'javascript',
+        'VITEST'     => 'javascript',
         'VUE'        => 'vue',
         'SYMFONY'    => 'php',
         'LARAVEL'    => 'php',
@@ -101,7 +102,7 @@ final class CompileAiGuidance extends Command
      *                                   bundle is the only output there).
      */
     public function __construct(
-        private readonly array $modules = ['GENERAL', 'PHP', 'JAVASCRIPT'],
+        private readonly array $modules = ['GENERAL', 'PHP', 'JAVASCRIPT', 'VITEST'],
         private readonly bool $splitOutputs = false,
         private readonly bool $generateLegacyAllMdc = true,
     ) {
