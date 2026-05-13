@@ -26,6 +26,18 @@ Applies to all languages. Language-specific rules live in their respective files
 - Document non-obvious decisions with comments or ADRs; prefer self-explanatory code.
 - Use static analysis and linters; fix or justify warnings.
 
+### Code Smells
+
+Recognise and avoid these named anti-patterns. Naming them gives teams a shared vocabulary for code review.
+
+- **Primitive Obsession** — using raw strings, ints, or arrays to represent domain concepts. Prefer value objects, enums, or typed DTOs (e.g. a `Status` type rather than a plain `string $status`).
+- **Long Parameter List** — more than 3–4 parameters signals a missing object or DTO. Group related parameters into a dedicated input type.
+- **Large Class / Module** — a class or module that keeps growing and takes on unrelated responsibilities. Split by single responsibility.
+- **Feature Envy** — a method that accesses another class's data more than its own. It probably belongs in that other class.
+- **Message Chains** — `a->getB()->getC()->getValue()`. Ask the first object for what you need; don't reach through a chain of intermediaries.
+- **Dead Code** — unused code should be deleted, not commented out. Version control exists for recovery.
+- **Speculative Generality** — abstractions added for imagined future needs that don't exist yet (YAGNI). Build for what is needed now; refactor when the need is real.
+
 ### Security & Reliability
 - Validate and sanitise inputs at boundaries.
 - Treat all I/O as fallible; log errors with actionable context.
