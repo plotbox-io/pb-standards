@@ -45,7 +45,7 @@
 - Vue component templates are **not** unit tested directly. Do not suggest or write
   Vitest tests that mount or render `.vue` files.
 - Extract testable logic (multiple branches, reused behaviour) into composables or utility
-  modules, then test those with Vitest. See `VITEST.md` for full conventions.
+  modules, then test those with Vitest.
 - A single `v-if`, a lone watcher, or a mount-time fetch does not warrant extraction.
 
 ### Tooling
