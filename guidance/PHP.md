@@ -19,7 +19,7 @@ Rules cover pure PHP. Framework-specific guidance is in the Laravel and Symfony 
 
 ### Object Design
 - Prefer composition over inheritance. Classes are `final` by default.
-- Type-hint against interfaces, not concrete classes — constructor params, method params, properties, and return types.
+- Type-hint against interfaces at real architectural seams — repositories, file system, external APIs, clocks, queues, and other I/O or infrastructure boundaries where you need to swap implementations (e.g. for testing or multiple environments). For internal collaborators within the same layer where no substitution is needed, a concrete type-hint is acceptable.
 - Use constructor injection. Avoid service locators and globals.
 - Avoid static methods for behaviour; exceptions: named constructors, pure factories, constants, stateless helpers.
 - Properties and methods are `private` by default; `protected` only when there is a concrete inheritance need.
@@ -76,7 +76,7 @@ Rules cover pure PHP. Framework-specific guidance is in the Laravel and Symfony 
 ### Testing & Tooling
 - Isolate I/O behind interfaces; inject time/clock, filesystem, and external clients as dependencies.
 - Unit tests focus on use-case handlers.
-- Prefer fakes over mocks; mock only your own interfaces.
+- Prefer fakes over mocks. The project uses `dg/bypass-finals`, so concrete and final classes can be mocked with Mockery when creating a full fake would be disproportionate. Prefer a handwritten fake when the collaborator is complex or used across many tests.
 - Test files mirror source structure (e.g. `src/Foo/Bar.php` → `tests/Foo/BarTest.php`).
 - One SUT per test class, named `$sut`, constructed only in `setUp()`. Do not reconstruct after `setUp()`.
 - Test method names start with `should_`.
@@ -101,3 +101,5 @@ Common misapplications to avoid when reviewing PHP code:
 - **`@throws` for guard exceptions**: Never request `@throws LogicException`, `@throws RuntimeException`, or `@throws InvalidArgumentException`. Only flag missing `@throws` for domain exceptions callers may legitimately catch.
 - **`@param`/`@return` for simple native types**: Do not suggest adding these when they would only repeat a native type hint already in the signature. Only suggest PHPDoc that adds generics (e.g. `list<User>`) or documents domain exceptions.
 - **`given_`/`then_` method parameters**: Do not flag parameters on `given_` or `then_` helpers. They are explicitly permitted when they improve readability.
+- **Interface requirement**: Do not flag a concrete constructor parameter as requiring an interface unless the dependency crosses an architectural boundary (repository, file system, external API, clock, queue). Internal collaborators within the same layer where no substitution is needed do not require an interface.
+- **Mocking concrete and final classes**: Do not flag `Mockery::mock(ConcreteClass::class)` as a violation. The project uses `dg/bypass-finals` which enables mocking of concrete and final classes. Mocking a concrete class is acceptable when creating a dedicated fake would be disproportionate.
