@@ -37,6 +37,7 @@ Recognise and avoid these named anti-patterns. Naming them gives teams a shared 
 - **Message Chains** — `a->getB()->getC()->getValue()`. Ask the first object for what you need; don't reach through a chain of intermediaries.
 - **Dead Code** — unused code should be deleted, not commented out. Version control exists for recovery.
 - **Speculative Generality** — abstractions added for imagined future needs that don't exist yet (YAGNI). Build for what is needed now; refactor when the need is real.
+- **Separator Comments** — horizontal-rule comments used to partition a file into sections (e.g. `// -------- given`, `/* === Helpers === */`, `// #region`, `########`). These are a legacy text-editor technique for navigating long files. In modern code, prefer self-explanatory structure: keep files short, give methods descriptive names, and use the language's own grouping constructs (classes, modules, small files). A separator comment is a signal that the code block it guards should be refactored or split out, not decorated.
 
 ### Security & Reliability
 - Validate and sanitise inputs at boundaries.
