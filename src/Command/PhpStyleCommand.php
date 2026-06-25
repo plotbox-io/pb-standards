@@ -88,6 +88,17 @@ final class PhpStyleCommand extends Command
             return self::SUCCESS;
         }
 
+        $syntaxErrors = $this->findSyntaxErrors($filesToCheck);
+        if ($syntaxErrors !== []) {
+            $io->error('Style check aborted - the following file(s) are not valid PHP and must be fixed first:');
+            foreach ($syntaxErrors as $file => $message) {
+                $io->writeln("<error> {$file} </error>");
+                $io->writeln($message);
+                $io->newLine();
+            }
+            return self::FAILURE;
+        }
+
         $tempFileList = $this->createTempFileList($filesToCheck);
         $phpVersion = $this->resolvePhpVersion();
         $tempRuleset = $this->maybeWriteVersionAdaptedRuleset($phpVersion);
@@ -145,6 +156,35 @@ final class PhpStyleCommand extends Command
         echo "Checking style for files:\n" . $this->getFileListString($modifiedFiles, $branchModifications) . "\n\n";
 
         return $modifiedFiles;
+    }
+
+    /**
+     * Pre-flight guard: reject any file that is not valid PHP before running phpcs.
+     *
+     * phpcs tokenises invalid PHP rather than rejecting it, and certain sniffs walk
+     * the brace/scope map of the resulting (corrupt) token stream. A malformed
+     * structure can send such a sniff into an infinite loop, hanging the whole
+     * php-style run indefinitely. Failing fast on a clear `php -l` error is far
+     * better than an unbounded hang.
+     *
+     * @param list<string> $files
+     * @return array<string, string> map of file => `php -l` error output (empty when all valid)
+     */
+    private function findSyntaxErrors(array $files): array
+    {
+        $errors = [];
+        foreach ($files as $file) {
+            if (!str_ends_with($file, '.php') || !is_file($file)) {
+                continue;
+            }
+
+            $result = Shell::exec('php -l ' . escapeshellarg($file) . ' 2>&1');
+            if ($result->exitCode !== 0) {
+                $errors[$file] = trim((string) $result->stdOut);
+            }
+        }
+
+        return $errors;
     }
 
     /**
@@ -269,11 +309,7 @@ final class PhpStyleCommand extends Command
             : ($this->phpcsConfigPath ? escapeshellarg($this->phpcsConfigPath) : 'PlotBox');
 
         $errorMode = E_ERROR | E_PARSE;
-        // pcre.jit=0: PHP's PCRE JIT engine is not fork-safe. Under phpcs --parallel
-        // (which uses pcntl_fork) a worker child can intermittently spin forever inside
-        // a JIT-compiled regex, hanging the whole pipeline. Disabling the JIT avoids this
-        // at a negligible performance cost for linting.
-        $lenientPhpRuntime = "php -d memory_limit=-1 -d pcre.jit=0 -d error_reporting=$errorMode";
+        $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
         $phpcsCommand = "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
             --runtime-set testVersion $phpVersion \
             --extensions=php \
