@@ -269,7 +269,11 @@ final class PhpStyleCommand extends Command
             : ($this->phpcsConfigPath ? escapeshellarg($this->phpcsConfigPath) : 'PlotBox');
 
         $errorMode = E_ERROR | E_PARSE;
-        $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
+        // pcre.jit=0: PHP's PCRE JIT engine is not fork-safe. Under phpcs --parallel
+        // (which uses pcntl_fork) a worker child can intermittently spin forever inside
+        // a JIT-compiled regex, hanging the whole pipeline. Disabling the JIT avoids this
+        // at a negligible performance cost for linting.
+        $lenientPhpRuntime = "php -d memory_limit=-1 -d pcre.jit=0 -d error_reporting=$errorMode";
         $phpcsCommand = "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
             --runtime-set testVersion $phpVersion \
             --extensions=php \
