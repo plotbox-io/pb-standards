@@ -1267,20 +1267,19 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/plotbox-io/php-git-ops.git",
-                "reference": "ab9d3b9ac9d774ba561220e1374cef22c682110b"
+                "reference": "b26a0683cf3bdda537a1cb62a9cf1044a6a48e3f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/plotbox-io/php-git-ops/zipball/ab9d3b9ac9d774ba561220e1374cef22c682110b",
-                "reference": "ab9d3b9ac9d774ba561220e1374cef22c682110b",
+                "url": "https://api.github.com/repos/plotbox-io/php-git-ops/zipball/b26a0683cf3bdda537a1cb62a9cf1044a6a48e3f",
+                "reference": "b26a0683cf3bdda537a1cb62a9cf1044a6a48e3f",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.0"
             },
             "require-dev": {
-                "mockery/mockery": "0.9.11",
-                "phpunit/phpunit": "4.8.36"
+                "phpunit/phpunit": "^13.0"
             },
             "default-branch": true,
             "bin": [
@@ -1291,6 +1290,16 @@
                 "psr-4": {
                     "PlotBox\\PhpGitOps\\": "src/"
                 }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "PlotBox\\PhpGitOps\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "phpunit"
+                ]
             },
             "license": [
                 "MIT"
@@ -1306,7 +1315,7 @@
                 "source": "https://github.com/plotbox-io/php-git-ops/tree/master",
                 "issues": "https://github.com/plotbox-io/php-git-ops/issues"
             },
-            "time": "2025-05-06T11:37:22+00:00"
+            "time": "2026-08-19T15:08:21+00:00"
         },
         {
             "name": "plotbox-io/phpcs-parse",
