@@ -331,7 +331,7 @@ final class PhpStyleCommand extends Command
 
     private function getBranchModifications(): BranchModifications
     {
-        $this->git->fetchAll();
+        $this->git->fetchStandardAncestors();
         $branchModificationFactory = new BranchModificationsFactory($this->git);
         return $branchModificationFactory->getBranchModifications();
     }
