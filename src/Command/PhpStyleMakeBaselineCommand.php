@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PlotBox\Standards\Command;
 
+use PlotBox\Standards\Baseline\LooseBaseline;
+use PlotBox\Standards\Baseline\PhpcsBaselineIssues;
+use PlotBox\Standards\Util\Shell;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -37,6 +40,11 @@ final class PhpStyleMakeBaselineCommand extends Command
                 description: 'Path to sarb baseline file'
             )
             ->addOption(
+                name: 'baseline',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'Baseline file to write. A .toml path writes a loose baseline; anything else uses SARB.'
+            )
+            ->addOption(
                 name: 'src',
                 mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 description: 'Source directories to check (can be specified multiple times)'
@@ -59,21 +67,38 @@ final class PhpStyleMakeBaselineCommand extends Command
             $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
         }
 
-        $sarbBaselinePath = $input->getOption('sarb-baseline') ?: $this->appRoot . '/phpcs.baseline';
+        $explicit = $input->getOption('baseline');
+        $sarbBaselinePath = is_string($explicit) && $explicit !== ''
+            ? $explicit
+            : ($input->getOption('sarb-baseline') ?: $this->appRoot . '/phpcs.baseline');
         $srcDirs = $input->getOption('src');
         if (!$srcDirs || count($srcDirs) === 0) {
             $io->error('At least one source directory must be specified using the --src option.');
             return Command::FAILURE;
         }
         $srcDirsString = implode(' ', array_map('escapeshellarg', $srcDirs));
-        $command = <<<CMD
+        $phpcsCommand = <<<CMD
             php -d memory_limit=-1 -d error_reporting=5 vendor/bin/phpcs \
                 --runtime-set testVersion $phpVersion \
                 --extensions=php \
                 --parallel=16 \
                 --standard=Plotbox \
                 --report=json \
-                $srcDirsString \
+                $srcDirsString
+            CMD;
+
+        if (str_ends_with($sarbBaselinePath, '.toml')) {
+            $issues = PhpcsBaselineIssues::fromJsonReport(
+                (string) Shell::exec($phpcsCommand)->stdOut,
+                ['/opt/project/', '/app/', $this->appRoot . '/']
+            );
+            file_put_contents($sarbBaselinePath, LooseBaseline::fromIssues($issues)->toToml());
+            $io->success(sprintf('Wrote %d issues to %s', count($issues), $sarbBaselinePath));
+            return Command::SUCCESS;
+        }
+
+        $command = <<<CMD
+            $phpcsCommand \
             | php -d memory_limit=-1 \
                 ./vendor/bin/sarb create \
                 --input-format="phpcodesniffer-json" \
