@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PlotBox\Standards\Command;
 
+use Closure;
 use PlotBox\PhpcsParse\CodeIssue as PhpcsCodeIssue;
 use PlotBox\PhpGitOps\Git\BranchModifications;
 use PlotBox\PhpGitOps\Git\BranchModificationsFactory;
@@ -21,6 +22,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 /**
  * Optimised code style checker for PlotBox repositories. Will only check modified files (using git).
@@ -46,13 +48,16 @@ final class PhpStyleCommand extends Command
 
     private Git $git;
     private string $cwd;
+    private ?BranchModifications $branchModifications = null;
+    private int $changedLineIssueCount = 0;
 
     /** @param list<string> $excludedDirectories */
     public function __construct(
         private ?string $realAppRoot = null,
         private array $excludedDirectories = [],
         private ?string $phpVersion = null,
-        private ?string $phpcsConfigPath = null
+        private ?string $phpcsConfigPath = null,
+        private bool $strictChangedLines = false
     ) {
         parent::__construct(self::COMMAND_NAME);
         $envRoot = getenv('PB_PROJECT_ROOT');
@@ -135,7 +140,8 @@ final class PhpStyleCommand extends Command
             $issues = $this->getProcessedIssues(
                 $result->stdOut,
                 $rawPhpcsJson,
-                $looseBaseline && !$ignoreBaseline ? LooseBaseline::fromFile($baselinePath) : null
+                $looseBaseline && !$ignoreBaseline ? $baselinePath : null,
+                $io
             );
 
             if (count($issues) === 0) {
@@ -145,6 +151,7 @@ final class PhpStyleCommand extends Command
             }
 
             $this->renderIssuesTable($issues, $output);
+            $this->warnAboutChangedLineIssues($io);
 
             return self::FAILURE;
         } finally {
@@ -167,6 +174,7 @@ final class PhpStyleCommand extends Command
         }
 
         $branchModifications = $this->getBranchModifications();
+        $this->branchModifications = $branchModifications;
         $modifiedFiles = $this->getModifiedPhpFiles($branchModifications);
 
         if (count($modifiedFiles) === 0) {
@@ -222,13 +230,21 @@ final class PhpStyleCommand extends Command
     /**
      * @return list<PhpcsCodeIssue>
      */
-    private function getProcessedIssues(string $resultJson, bool $rawPhpcsJson, ?LooseBaseline $looseBaseline): array
-    {
+    private function getProcessedIssues(
+        string $resultJson,
+        bool $rawPhpcsJson,
+        ?string $looseBaselinePath,
+        SymfonyStyle $io
+    ): array {
         $sarbIssues = $this->getSarbIssues($resultJson, $rawPhpcsJson);
         $sarbIssues = $this->makePathsRelative($sarbIssues);
         $sarbIssues = $this->filterExcludedPaths($sarbIssues);
-        if ($looseBaseline !== null) {
-            $sarbIssues = $this->removeLooseBaselineIssues($sarbIssues, $looseBaseline);
+        if ($looseBaselinePath !== null) {
+            $sarbIssues = $this->removeLooseBaselineIssues(
+                $sarbIssues,
+                LooseBaseline::fromFile($looseBaselinePath),
+                $this->changedLineFilter($io)
+            );
         }
 
         return array_map(static function (SarbCodeIssue $sarbIssue): PhpcsCodeIssue {
@@ -246,11 +262,17 @@ final class PhpStyleCommand extends Command
     }
 
     /**
+     * Baselined issues on lines the branch changed are kept, so touched code must comply.
+     *
      * @param list<SarbCodeIssue> $issues
+     * @param (Closure(string, int): bool)|null $wasChanged
      * @return list<SarbCodeIssue>
      */
-    private function removeLooseBaselineIssues(array $issues, LooseBaseline $baseline): array
-    {
+    private function removeLooseBaselineIssues(
+        array $issues,
+        LooseBaseline $baseline,
+        ?Closure $wasChanged
+    ): array {
         $baselineIssues = [];
         foreach ($issues as $issue) {
             $baselineIssues[] = new BaselineIssue($issue->file, PhpcsBaselineIssues::code($issue), $issue->message);
@@ -262,12 +284,66 @@ final class PhpStyleCommand extends Command
 
         $remaining = [];
         foreach ($baselineIssues as $index => $baselineIssue) {
+            $issue = $issues[$index];
             if (isset($unmatched[spl_object_id($baselineIssue)])) {
-                $remaining[] = $issues[$index];
+                $remaining[] = $issue;
+            } elseif ($wasChanged !== null && $wasChanged($issue->file, $issue->line)) {
+                $remaining[] = $issue;
+                $this->changedLineIssueCount++;
             }
         }
 
         return $remaining;
+    }
+
+    /**
+     * Mainline branches are skipped: a release branch diffs against master, so every line it
+     * carries would count as changed.
+     *
+     * @return (Closure(string, int): bool)|null
+     */
+    private function changedLineFilter(SymfonyStyle $io): ?Closure
+    {
+        if (!$this->strictChangedLines) {
+            return null;
+        }
+        try {
+            $branch = $this->git->getCurrentBranch()->getName();
+            if (self::isMainlineBranch($branch)) {
+                $io->note('Changed-line check skipped: mainline branch ' . $branch);
+                return null;
+            }
+            $modifications = $this->branchModifications ?? $this->getBranchModifications();
+        } catch (Throwable $exception) {
+            $io->note('Changed-line check skipped: ' . $exception->getMessage());
+            return null;
+        }
+
+        return static fn (string $file, int $line): bool => $modifications->wasModified(
+            new RelativeFile($file),
+            $line
+        );
+    }
+
+    private static function isMainlineBranch(string $branch): bool
+    {
+        $name = str_starts_with($branch, 'origin/')
+            ? substr($branch, strlen('origin/'))
+            : $branch;
+
+        return in_array($name, ['master', 'main', 'develop'], true) || str_starts_with($name, 'release/');
+    }
+
+    private function warnAboutChangedLineIssues(SymfonyStyle $io): void
+    {
+        if ($this->changedLineIssueCount === 0) {
+            return;
+        }
+        $io->warning(sprintf(
+            '%d of these are baselined but on lines this branch changed. Fix them; code a branch touches '
+            . 'must comply (ADR 0020).',
+            $this->changedLineIssueCount
+        ));
     }
 
     private function resolveBaselinePath(InputInterface $input): string
