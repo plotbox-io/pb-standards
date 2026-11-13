@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace PlotBox\Standards\Baseline;
 
-use PlotBox\Standards\Command\SarbCodeIssue;
+use PlotBox\Standards\Command\PhpcsReportedIssue;
 use InvalidArgumentException;
 
 /**
- * Maps phpcs results onto loose-baseline issues. The sniff code (`source`) is the issue code,
- * matching what SARB stored as `type` for phpcs baselines.
+ * Maps phpcs results onto loose-baseline issues. The sniff code (`source`) is the issue code.
  */
 final class PhpcsBaselineIssues
 {
-    public static function code(SarbCodeIssue $issue): string
+    public static function code(PhpcsReportedIssue $issue): string
     {
         $source = $issue->originalToolDetails->source ?? null;
 

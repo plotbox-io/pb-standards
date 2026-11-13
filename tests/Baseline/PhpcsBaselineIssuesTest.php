@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use PlotBox\Standards\Baseline\BaselineIssue;
 use PlotBox\Standards\Baseline\PhpcsBaselineIssues;
-use PlotBox\Standards\Command\SarbCodeIssue;
+use PlotBox\Standards\Command\PhpcsReportedIssue;
 
 final class PhpcsBaselineIssuesTest extends TestCase
 {
@@ -35,7 +35,7 @@ final class PhpcsBaselineIssuesTest extends TestCase
     #[Test]
     public function should_use_the_sniff_source_as_the_issue_code(): void
     {
-        $issue = SarbCodeIssue::fromPhpcs('a.php', (object) [
+        $issue = PhpcsReportedIssue::fromPhpcs('a.php', (object) [
             'line' => 1,
             'type' => 'ERROR',
             'message' => 'm',

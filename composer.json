@@ -21,10 +21,6 @@
     {
       "type": "vcs",
       "url": "https://github.com/plotbox-io/phpcs-parse"
-    },
-    {
-      "type": "vcs",
-      "url": "https://github.com/plotbox-io/sarb"
     }
   ],
   "require": {
@@ -42,8 +38,7 @@
     "symfony/console": ">=6.0",
     "symfony/process": ">=6.0",
     "plotbox-io/phpcs-parse": "dev-master",
-    "thecodingmachine/safe": "^3.3",
-    "dave-liddament/sarb": "dev-master"
+    "thecodingmachine/safe": "^3.3"
   },
   "config": {
     "allow-plugins": {

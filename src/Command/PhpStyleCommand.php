@@ -44,8 +44,6 @@ final class PhpStyleCommand extends Command
 
     public const LOOSE_BASELINE = 'phpcs-baseline.toml';
 
-    public const SARB_BASELINE = 'phpcs.baseline';
-
     private Git $git;
     private string $cwd;
     private ?BranchModifications $branchModifications = null;
@@ -76,15 +74,10 @@ final class PhpStyleCommand extends Command
                 description: 'Force scanning on certain directories/files'
             )
             ->addOption(
-                name: 'sarb-baseline',
-                description: 'Path to sarb baseline file'
-            )
-            ->addOption(
                 name: 'baseline',
                 mode: InputOption::VALUE_REQUIRED,
-                description: 'Baseline file. A .toml path is a loose (file, code, message, count) baseline; '
-                    . 'anything else is SARB. Defaults to ' . self::LOOSE_BASELINE . ' when it exists, else '
-                    . self::SARB_BASELINE
+                description: 'Loose TOML baseline (file, code, message, count). Defaults to '
+                    . self::LOOSE_BASELINE
             )
             ->addOption(
                 name: 'ignore-baseline',
@@ -124,11 +117,12 @@ final class PhpStyleCommand extends Command
         $tempRuleset = $this->maybeWriteVersionAdaptedRuleset($phpVersion);
 
         try {
-            $baselinePath = $this->resolveBaselinePath($input);
-            $looseBaseline = str_ends_with($baselinePath, '.toml');
             $ignoreBaseline = (bool) $input->getOption('ignore-baseline');
-            $rawPhpcsJson = $ignoreBaseline || $looseBaseline;
-            $shellCommand = $this->getShellCommand($tempFileList, $baselinePath, $rawPhpcsJson, $phpVersion, $tempRuleset);
+            $baselinePath = $ignoreBaseline ? null : $this->resolveBaselinePath($input, $io);
+            if (!$ignoreBaseline && $baselinePath === null) {
+                return Command::INVALID;
+            }
+            $shellCommand = $this->getShellCommand($tempFileList, $phpVersion, $tempRuleset);
 
             $result = Shell::exec($shellCommand);
 
@@ -139,8 +133,7 @@ final class PhpStyleCommand extends Command
 
             $issues = $this->getProcessedIssues(
                 $result->stdOut,
-                $rawPhpcsJson,
-                $looseBaseline && !$ignoreBaseline ? $baselinePath : null,
+                $baselinePath,
                 $io
             );
 
@@ -232,41 +225,40 @@ final class PhpStyleCommand extends Command
      */
     private function getProcessedIssues(
         string $resultJson,
-        bool $rawPhpcsJson,
         ?string $looseBaselinePath,
         SymfonyStyle $io
     ): array {
-        $sarbIssues = $this->getSarbIssues($resultJson, $rawPhpcsJson);
-        $sarbIssues = $this->makePathsRelative($sarbIssues);
-        $sarbIssues = $this->filterExcludedPaths($sarbIssues);
+        $reported = $this->parsePhpcsIssues($resultJson);
+        $reported = $this->makePathsRelative($reported);
+        $reported = $this->filterExcludedPaths($reported);
         if ($looseBaselinePath !== null) {
-            $sarbIssues = $this->removeLooseBaselineIssues(
-                $sarbIssues,
+            $reported = $this->removeLooseBaselineIssues(
+                $reported,
                 LooseBaseline::fromFile($looseBaselinePath),
                 $this->changedLineFilter($io)
             );
         }
 
-        return array_map(static function (SarbCodeIssue $sarbIssue): PhpcsCodeIssue {
+        return array_map(static function (PhpcsReportedIssue $issue): PhpcsCodeIssue {
             return new PhpcsCodeIssue(
-                $sarbIssue->file,
-                $sarbIssue->originalToolDetails->line,
-                $sarbIssue->originalToolDetails->column,
-                $sarbIssue->originalToolDetails->source,
-                $sarbIssue->originalToolDetails->message,
-                $sarbIssue->originalToolDetails->type,
-                $sarbIssue->originalToolDetails->severity,
-                $sarbIssue->originalToolDetails->fixable
+                $issue->file,
+                $issue->originalToolDetails->line,
+                $issue->originalToolDetails->column,
+                $issue->originalToolDetails->source,
+                $issue->originalToolDetails->message,
+                $issue->originalToolDetails->type,
+                $issue->originalToolDetails->severity,
+                $issue->originalToolDetails->fixable
             );
-        }, $sarbIssues);
+        }, $reported);
     }
 
     /**
      * Baselined issues on lines the branch changed are kept, so touched code must comply.
      *
-     * @param list<SarbCodeIssue> $issues
+     * @param list<PhpcsReportedIssue> $issues
      * @param (Closure(string, int): bool)|null $wasChanged
-     * @return list<SarbCodeIssue>
+     * @return list<PhpcsReportedIssue>
      */
     private function removeLooseBaselineIssues(
         array $issues,
@@ -346,19 +338,20 @@ final class PhpStyleCommand extends Command
         ));
     }
 
-    private function resolveBaselinePath(InputInterface $input): string
+    private function resolveBaselinePath(InputInterface $input, SymfonyStyle $io): ?string
     {
         $explicit = $input->getOption('baseline');
         if (is_string($explicit) && $explicit !== '') {
-            return str_starts_with($explicit, '/') ? $explicit : $this->cwd . '/' . $explicit;
+            $path = str_starts_with($explicit, '/') ? $explicit : $this->cwd . '/' . $explicit;
+        } else {
+            $path = $this->cwd . '/' . self::LOOSE_BASELINE;
         }
-        $sarb = $input->getOption('sarb-baseline');
-        if (is_string($sarb) && $sarb !== '') {
-            return $sarb;
+        if (!str_ends_with($path, '.toml')) {
+            $io->error('SARB baselines are retired. Pass a .toml file (default ' . self::LOOSE_BASELINE . ').');
+            return null;
         }
-        $loose = $this->cwd . '/' . self::LOOSE_BASELINE;
 
-        return is_file($loose) ? $loose : $this->cwd . '/' . self::SARB_BASELINE;
+        return $path;
     }
 
     /**
@@ -437,8 +430,6 @@ final class PhpStyleCommand extends Command
 
     private function getShellCommand(
         string $tempFileListPath,
-        string $sarbBaselinePath,
-        bool $ignoreBaseline,
         string $phpVersion,
         ?string $tempRuleset
     ): string {
@@ -450,23 +441,14 @@ final class PhpStyleCommand extends Command
 
         $errorMode = E_ERROR | E_PARSE;
         $lenientPhpRuntime = "php -d memory_limit=-1 -d error_reporting=$errorMode";
-        $phpcsCommand = "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
+
+        return "XDEBUG_MODE=off $lenientPhpRuntime vendor/bin/phpcs \
             --runtime-set testVersion $phpVersion \
             --extensions=php \
             --parallel=" . self::NUM_THREADS . " \
             --standard=$standard \
             --report=json \
             $pathsToScan | uniq";
-
-        if ($ignoreBaseline) {
-            return $phpcsCommand;
-        }
-
-        return "$phpcsCommand \
-        | $lenientPhpRuntime \
-            ./vendor/bin/sarb \
-            --output-format=json \
-            remove $sarbBaselinePath";
     }
 
     private function getBranchModifications(): BranchModifications
@@ -494,8 +476,8 @@ final class PhpStyleCommand extends Command
     }
 
     /**
-     * @param list<SarbCodeIssue> $issues
-     * @return list<SarbCodeIssue>
+     * @param list<PhpcsReportedIssue> $issues
+     * @return list<PhpcsReportedIssue>
      */
     private function makePathsRelative(array $issues): array
     {
@@ -524,8 +506,8 @@ final class PhpStyleCommand extends Command
     }
 
     /**
-     * @param list<SarbCodeIssue> $issues
-     * @return list<SarbCodeIssue>
+     * @param list<PhpcsReportedIssue> $issues
+     * @return list<PhpcsReportedIssue>
      */
     private function filterExcludedPaths(array $issues): array
     {
@@ -539,24 +521,22 @@ final class PhpStyleCommand extends Command
     }
 
 
-    /** @return list<SarbCodeIssue> */
-    private function getSarbIssues(string $resultJson, bool $ignoreBaseline): array
+    /** @return list<PhpcsReportedIssue> */
+    private function parsePhpcsIssues(string $resultJson): array
     {
-        $issues = json_decode($resultJson);
-        if ($ignoreBaseline) {
-            $phpcsIssues = [];
-            foreach ($issues->files as $file => $details) {
-                foreach ($details->messages as $message) {
-                    $phpcsIssues[] = SarbCodeIssue::fromPhpcs($file, $message);
-                }
-            }
-            return $phpcsIssues;
+        $report = json_decode($resultJson);
+        if (!is_object($report) || !isset($report->files) || !is_object($report->files)) {
+            return [];
         }
 
-        foreach ($issues as $i => $issue) {
-            $issues[$i] = SarbCodeIssue::fromObject($issue);
+        $phpcsIssues = [];
+        foreach ($report->files as $file => $details) {
+            foreach ($details->messages ?? [] as $message) {
+                $phpcsIssues[] = PhpcsReportedIssue::fromPhpcs((string) $file, $message);
+            }
         }
-        return array_values($issues);
+
+        return $phpcsIssues;
     }
 
     private function isPathInWhitelistedDirectories(string $touchedFile): bool

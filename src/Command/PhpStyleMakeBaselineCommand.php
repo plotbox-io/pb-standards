@@ -9,11 +9,8 @@ use PlotBox\Standards\Baseline\PhpcsBaselineIssues;
 use PlotBox\Standards\Util\Shell;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-
-use function Safe\passthru;
-
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 final class PhpStyleMakeBaselineCommand extends Command
@@ -36,20 +33,16 @@ final class PhpStyleMakeBaselineCommand extends Command
         $this
             ->setName(self::COMMAND_NAME)
             ->addOption(
-                name: 'sarb-baseline',
-                description: 'Path to sarb baseline file'
-            )
-            ->addOption(
                 name: 'baseline',
                 mode: InputOption::VALUE_REQUIRED,
-                description: 'Baseline file to write. A .toml path writes a loose baseline; anything else uses SARB.'
+                description: 'Loose TOML baseline to write. Defaults to phpcs-baseline.toml'
             )
             ->addOption(
                 name: 'src',
                 mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 description: 'Source directories to check (can be specified multiple times)'
             )
-            ->setDescription('Check PHP code style');
+            ->setDescription('Write a phpcs loose TOML baseline');
     }
 
     /** @inheritdoc */
@@ -68,9 +61,13 @@ final class PhpStyleMakeBaselineCommand extends Command
         }
 
         $explicit = $input->getOption('baseline');
-        $sarbBaselinePath = is_string($explicit) && $explicit !== ''
+        $baselinePath = is_string($explicit) && $explicit !== ''
             ? $explicit
-            : ($input->getOption('sarb-baseline') ?: $this->appRoot . '/phpcs.baseline');
+            : $this->appRoot . '/phpcs-baseline.toml';
+        if (!str_ends_with($baselinePath, '.toml')) {
+            $io->error('SARB baselines are retired. Pass a .toml path (default phpcs-baseline.toml).');
+            return Command::FAILURE;
+        }
         $srcDirs = $input->getOption('src');
         if (!$srcDirs || count($srcDirs) === 0) {
             $io->error('At least one source directory must be specified using the --src option.');
@@ -87,25 +84,12 @@ final class PhpStyleMakeBaselineCommand extends Command
                 $srcDirsString
             CMD;
 
-        if (str_ends_with($sarbBaselinePath, '.toml')) {
-            $issues = PhpcsBaselineIssues::fromJsonReport(
-                (string) Shell::exec($phpcsCommand)->stdOut,
-                ['/opt/project/', '/app/', $this->appRoot . '/']
-            );
-            file_put_contents($sarbBaselinePath, LooseBaseline::fromIssues($issues)->toToml());
-            $io->success(sprintf('Wrote %d issues to %s', count($issues), $sarbBaselinePath));
-            return Command::SUCCESS;
-        }
-
-        $command = <<<CMD
-            $phpcsCommand \
-            | php -d memory_limit=-1 \
-                ./vendor/bin/sarb create \
-                --input-format="phpcodesniffer-json" \
-                $sarbBaselinePath
-            CMD;
-
-        passthru($command, $exitCode);
-        return $exitCode;
+        $issues = PhpcsBaselineIssues::fromJsonReport(
+            (string) Shell::exec($phpcsCommand)->stdOut,
+            ['/opt/project/', '/app/', $this->appRoot . '/']
+        );
+        file_put_contents($baselinePath, LooseBaseline::fromIssues($issues)->toToml());
+        $io->success(sprintf('Wrote %d issues to %s', count($issues), $baselinePath));
+        return Command::SUCCESS;
     }
 }
