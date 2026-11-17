@@ -20,7 +20,8 @@ final class PhpStyleMakeBaselineCommand extends Command
     private string $appRoot;
 
     public function __construct(
-        private ?string $phpVersion = null
+        private ?string $phpVersion = null,
+        private ?string $phpcsConfigPath = null
     ) {
         parent::__construct(self::COMMAND_NAME);
         $envRoot = getenv('PB_PROJECT_ROOT');
@@ -41,6 +42,12 @@ final class PhpStyleMakeBaselineCommand extends Command
                 name: 'src',
                 mode: InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 description: 'Source directories to check (can be specified multiple times)'
+            )
+            ->addOption(
+                name: 'standard',
+                mode: InputOption::VALUE_REQUIRED,
+                description: 'PHPCS standard name or ruleset path. Defaults to the injected '
+                    . 'phpcsConfigPath, then PlotBox'
             )
             ->setDescription('Write a phpcs loose TOML baseline');
     }
@@ -73,23 +80,66 @@ final class PhpStyleMakeBaselineCommand extends Command
             $io->error('At least one source directory must be specified using the --src option.');
             return Command::FAILURE;
         }
+        $cliStandard = $input->getOption('standard');
+        $standard = PhpcsStandard::resolve(
+            is_string($cliStandard) ? $cliStandard : null,
+            $this->phpcsConfigPath
+        );
         $srcDirsString = implode(' ', array_map('escapeshellarg', $srcDirs));
+        $tempRuleset = $this->maybeWriteVersionAdaptedRuleset($phpVersion, $standard);
+        $standardFlag = $tempRuleset !== null
+            ? escapeshellarg($tempRuleset)
+            : escapeshellarg($standard);
         $phpcsCommand = <<<CMD
             php -d memory_limit=-1 -d error_reporting=5 vendor/bin/phpcs \
                 --runtime-set testVersion $phpVersion \
                 --extensions=php \
                 --parallel=16 \
-                --standard=Plotbox \
+                --standard=$standardFlag \
                 --report=json \
                 $srcDirsString
             CMD;
 
-        $issues = PhpcsBaselineIssues::fromJsonReport(
-            (string) Shell::exec($phpcsCommand)->stdOut,
-            ['/opt/project/', '/app/', $this->appRoot . '/']
-        );
+        try {
+            $issues = PhpcsBaselineIssues::fromJsonReport(
+                (string) Shell::exec($phpcsCommand)->stdOut,
+                ['/opt/project/', '/app/', $this->appRoot . '/']
+            );
+        } finally {
+            if ($tempRuleset !== null) {
+                @unlink($tempRuleset);
+            }
+        }
         file_put_contents($baselinePath, LooseBaseline::fromIssues($issues)->toToml());
         $io->success(sprintf('Wrote %d issues to %s', count($issues), $baselinePath));
         return Command::SUCCESS;
+    }
+
+    /**
+     * Match php-style: below PHP 8.3, typed class constants are not valid syntax
+     * and Slevomat does not honour testVersion for ClassConstantTypeHint.
+     */
+    private function maybeWriteVersionAdaptedRuleset(string $phpVersion, string $baseStandard): ?string
+    {
+        if (version_compare($phpVersion, '8.3', '>=')) {
+            return null;
+        }
+
+        $xml = <<<XML
+            <?xml version="1.0"?>
+            <ruleset name="PlotBoxVersionAdapted">
+                <rule ref="{$baseStandard}"/>
+                <rule ref="SlevomatCodingStandard.TypeHints.ClassConstantTypeHint">
+                    <properties>
+                        <property name="enableNativeTypeHint" value="false"/>
+                    </properties>
+                </rule>
+            </ruleset>
+            XML;
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'phpcs_ruleset_') . '.xml';
+        file_put_contents($tempPath, $xml);
+
+        return $tempPath;
     }
 }
